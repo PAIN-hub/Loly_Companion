@@ -1,0 +1,61 @@
+{
+  "name": "loly",
+  "version": "1.0.0",
+  "description": "A desktop companion for Windows & Linux keeping an eye on AI coding agents with Gemini API integration",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "simulate": "node hooks/test-agent.js",
+    "desktop": "google-chrome --app=http://127.0.0.1:4141 --window-size=860,640 --window-position=530,20",
+    "electron": "electron .",
+    "app:linux": "./dist/linux-unpacked/loly",
+    "dist": "electron-builder && node scripts/fix-appimage.js",
+    "dist:linux": "electron-builder --linux AppImage && node scripts/fix-appimage.js",
+    "dist:win": "electron-builder --win nsis portable"
+  },
+  "build": {
+    "appId": "com.loly.app",
+    "productName": "Loly",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "preload.cjs",
+      "server.js",
+      "db.js",
+      "gemini.js",
+      "public/**/*",
+      "hooks/**/*"
+    ],
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "public/icon.png",
+      "category": "Development"
+    },
+    "win": {
+      "target": [
+        "portable",
+        "nsis"
+      ],
+      "icon": "public/icon.png"
+    }
+  },
+  "keywords": [
+    "ai-agent",
+    "gemini",
+    "desktop-island",
+    "coucou",
+    "companion"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^44.7.2",
+    "electron-builder": "^26.15.3"
+  }
+}

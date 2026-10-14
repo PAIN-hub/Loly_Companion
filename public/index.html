@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loly — AI Agent Screen Companion & Notch Island</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="desktop-stage" id="desktopStage">
+    
+    <!-- Top Floating Island Container -->
+    <header class="island-wrapper" id="islandWrapper">
+      <!-- Animated Ethereal Ripple Glow on Expansion & Approvals -->
+      <div class="island-ripple" id="islandRipple"></div>
+
+      <!-- The Main Notch Pill -->
+      <div class="island-pill" id="islandPill">
+        
+        <!-- Mascot (Loly) matching Coucou Mascot with Interactive Eye Tracking -->
+        <div class="mascot-avatar" id="mascotAvatar" title="Loly Companion - click to toggle drawer">
+          <svg viewBox="0 0 40 26" class="mascot-svg" id="mascotSvg">
+            <!-- Sleek Pill Squircle Body (matching Image 2) -->
+            <rect x="1" y="1" width="38" height="24" rx="12" class="mascot-body" />
+            
+            <!-- Left Eye (Vertical Pill) -->
+            <g class="eye-group left-eye-group">
+              <rect x="10" y="5" width="5.5" height="12" rx="2.75" class="eye-white" />
+              <circle cx="12.75" cy="11" r="2" class="eye-pupil" id="leftPupil" />
+              <circle cx="13.5" cy="9.5" r="0.8" class="eye-glint" />
+            </g>
+            
+            <!-- Right Eye (Vertical Pill) -->
+            <g class="eye-group right-eye-group">
+              <rect x="24.5" y="5" width="5.5" height="12" rx="2.75" class="eye-white" />
+              <circle cx="27.25" cy="11" r="2" class="eye-pupil" id="rightPupil" />
+              <circle cx="28" cy="9.5" r="0.8" class="eye-glint" />
+            </g>
+            
+            <!-- Cute Orange Beak (matching Image 2) -->
+            <polygon points="20,12 23,17 17,17" class="mascot-beak" />
+          </svg>
+          <span class="mascot-status-dot" id="mascotStatusDot" title="Agent Status"></span>
+        </div>
+
+        <!-- Pill Status Center Content -->
+        <div class="pill-center" id="pillCenter">
+          <div class="pill-meta-row">
+            <span class="agent-badge" id="pillAgentName">gemini-cli</span>
+            <!-- Live Wave Equalizer Visualizer (matching Image 1 & 3) -->
+            <div class="pill-wave" id="pillWave" title="Active AI Agent Visualizer">
+              <span class="wave-bar bar-1"></span>
+              <span class="wave-bar bar-2"></span>
+              <span class="wave-bar bar-3"></span>
+              <span class="wave-bar bar-4"></span>
+            </div>
+            <span class="status-badge" id="pillStatusBadge">idle</span>
+            <!-- Mini Pill Time -->
+            <span class="pill-time-tag" id="pillTimeTag">--:--</span>
+          </div>
+          <div class="pill-ticker" id="pillTicker">
+            <span class="ticker-text" id="tickerText">Waiting for agent activity...</span>
+          </div>
+        </div>
+
+        <!-- Pill In-Notch Quick Approval Actions (One-click Allow/Deny) -->
+        <div class="pill-quick-actions" id="pillQuickActions" style="display: none;">
+          <button class="pill-action-btn quick-allow" id="quickAllowBtn" title="Allow Command">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="2 8 6 12 14 4"/></svg>
+          </button>
+          <button class="pill-action-btn quick-deny" id="quickDenyBtn" title="Deny Command">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="3" x2="13" y2="13"/><line x1="13" y1="3" x2="3" y2="13"/></svg>
+          </button>
+        </div>
+
+        <!-- Pill Window Controls & Drawer Toggle -->
+        <div class="pill-controls">
+          <button class="pill-btn electron-only" id="minimizeAppBtn" title="Minimize Island">
+            <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor">
+              <path d="M2 8h12v2H2z"/>
+            </svg>
+          </button>
+          <button class="pill-btn" id="toggleDrawerBtn" title="Expand Island Drawer">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor" class="toggle-icon">
+              <path d="M3 6l5 5 5-5H3z"/>
+            </svg>
+          </button>
+          <button class="pill-btn electron-only btn-close-x" id="closeAppBtn" title="Close Island">
+            <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor">
+              <path d="M3.7 3l4.3 4.3 4.3-4.3 1.4 1.4-4.3 4.3 4.3 4.3-1.4 1.4-4.3-4.3-4.3 4.3-1.4-1.4 4.3-4.3-4.3-4.3z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Expandable Island Drawer (Pitch Black OLED Dashboard) -->
+      <section class="island-drawer" id="islandDrawer">
+        
+        <!-- Drawer Top Status Bar: Live Time, Weather & Mini Music Player -->
+        <div class="drawer-header-strip">
+          <div class="time-weather-pill" title="Live clock & weather">
+            <span class="digital-clock" id="clockDisplay">12:00:00</span>
+            <span class="strip-divider">•</span>
+            <span class="weather-icon" id="weatherIcon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg></span>
+            <span class="weather-text" id="weatherDisplay">22°C Clear</span>
+          </div>
+
+          <!-- Mini Music Player Bar (matching Image 1) -->
+          <div class="mini-music-bar" id="miniMusicBar">
+            <button class="music-mini-btn" id="miniPlayBtn" title="Play/Pause Chill Beats">▶</button>
+            <div class="mini-music-info">
+              <span class="mini-track-title" id="miniTrackTitle">Chill Lo-Fi Coding Beats</span>
+              <div class="mini-equalizer" id="miniEqualizer">
+                <span></span><span></span><span></span>
+              </div>
+            </div>
+            <button class="music-mini-skip" id="miniSkipBtn" title="Next Track">⏭</button>
+          </div>
+
+          <!-- Theme Mode Quick Switcher -->
+          <button class="theme-quick-btn" id="quickThemeBtn" title="Switch between White Mode & OLED Mode">
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+          </button>
+        </div>
+
+        <!-- Quick 1-Click App Launcher Bar -->
+        <div class="app-launcher-bar">
+          <button class="launcher-chip" data-app="terminal" title="Launch Terminal">
+            <span class="chip-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg></span>
+            <span>Terminal</span>
+          </button>
+          <button class="launcher-chip" data-app="vscode" title="Open VS Code">
+            <span class="chip-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+            <span>VS Code</span>
+          </button>
+          <button class="launcher-chip" data-app="browser" title="Open Web Browser">
+            <span class="chip-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span>
+            <span>Browser</span>
+          </button>
+          <button class="launcher-chip" data-app="files" title="Open File Manager">
+            <span class="chip-icon"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></span>
+            <span>Files</span>
+          </button>
+        </div>
+
+        <!-- Drawer Navigation Tabs -->
+        <nav class="drawer-nav" role="tablist">
+          <button class="nav-tab active" data-tab="monitor" role="tab" aria-selected="true">Agent Monitor</button>
+          <button class="nav-tab" data-tab="gemini" role="tab" aria-selected="false">Gemini AI</button>
+          <button class="nav-tab" data-tab="music" role="tab" aria-selected="false">Music Player</button>
+          <button class="nav-tab" data-tab="simulator" role="tab" aria-selected="false">Hook Simulator</button>
+          <button class="nav-tab" data-tab="settings" role="tab" aria-selected="false">Settings</button>
+        </nav>
+
+        <!-- Tab 1: Agent Monitor -->
+        <div class="tab-pane active" id="pane-monitor">
+          <!-- Pending Approvals Section -->
+          <div class="section-card pending-card" id="pendingSection" style="display: none;">
+            <div class="section-header">
+              <span class="header-tag">ACTION REQUIRED</span>
+              <span class="header-title" id="approvalTitle">Permission Request</span>
+            </div>
+            <div class="approval-body">
+              <div class="approval-meta">
+                <span class="meta-label">Agent:</span> <strong id="approvalAgent">claude-code</strong>
+                <span class="meta-label">Type:</span> <span id="approvalType">bash_command</span>
+              </div>
+              <pre class="approval-target-box" id="approvalTarget"></pre>
+              
+              <!-- Diff snippet if present -->
+              <div class="diff-container" id="approvalDiffContainer" style="display: none;">
+                <div class="diff-header" id="diffHeader">src/index.js (+12 -2)</div>
+                <pre class="diff-body" id="diffBody"></pre>
+              </div>
+
+              <!-- Question options if present -->
+              <div class="options-container" id="approvalOptionsContainer" style="display: none;">
+                <p class="options-prompt">Select an option:</p>
+                <div class="options-list" id="approvalOptionsList"></div>
+              </div>
+
+              <!-- Gemini Verification Box -->
+              <div class="gemini-review-card" id="geminiReviewCard" style="display: none;">
+                <div class="review-header">
+                  <strong>Gemini Safety Review:</strong>
+                </div>
+                <div class="review-content" id="geminiReviewText">Analyzing action...</div>
+              </div>
+
+              <!-- Approval Actions -->
+              <div class="approval-btn-bar">
+                <button class="btn btn-secondary" id="btnGeminiReview">Ask Gemini Review</button>
+                <button class="btn btn-outline" id="btnDeny">Deny</button>
+                <button class="btn btn-primary" id="btnAllow">Allow</button>
+                <button class="btn btn-subtle" id="btnAlways">Always Allow</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Session Info & Ticker History -->
+          <div class="section-card">
+            <div class="section-header">
+              <span class="header-title">Live Agent Activity Stream</span>
+              <span class="header-counter" id="eventCounter">0 events</span>
+            </div>
+            <div class="activity-feed" id="activityFeed">
+              <div class="empty-feed">No active agent stream. Use the simulator or run a hook to connect.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Gemini Chat & Multimodal File Drop -->
+        <div class="tab-pane" id="pane-gemini">
+          <div class="gemini-chat-container">
+            <!-- Quick Prompt Suggestions Chips -->
+            <div class="quick-chips-row">
+              <button class="quick-chip prompt-chip" data-prompt="Explain the last terminal command in detail"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg> Explain Command</button>
+              <button class="quick-chip prompt-chip" data-prompt="Review my current project architecture and suggest security improvements"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Security Audit</button>
+              <button class="quick-chip prompt-chip" data-prompt="Write a unit test for my latest code change"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2v17.5c0 1.4-1.1 2.5-2.5 2.5s-2.5-1.1-2.5-2.5V2"/><path d="M8.5 2h7"/><path d="M14.5 16h-5"/></svg> Write Tests</button>
+              <button class="quick-chip prompt-chip" data-prompt="How do I connect Claude Code and Gemini CLI to Loly?"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6"/><path d="M6 8h12v4a6 6 0 0 1-12 0V8z"/><path d="M12 18v4"/><path d="M8 22h8"/></svg> Hook Setup</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+              <div class="chat-bubble assistant">
+                Hello! I am your <strong>Gemini Assistant</strong>. Ask me anything about your project, review code diffs, or drag and drop files here for instant analysis.
+              </div>
+            </div>
+
+            <!-- Drag & Drop File Zone -->
+            <div class="drop-zone" id="fileDropZone">
+              <input type="file" id="fileInput" class="file-input-hidden" />
+              <div class="drop-label" id="dropLabel">
+                Drop file here or click to attach (Code, TXT, JSON, PNG, JPG)
+              </div>
+              <div class="attached-file-pill" id="attachedFilePill" style="display: none;">
+                <span id="attachedFileName">file.txt</span>
+                <button type="button" class="btn-clear-file" id="btnClearFile">&times;</button>
+              </div>
+            </div>
+
+            <div class="chat-input-bar">
+              <textarea id="chatInput" placeholder="Ask Gemini about your code or agent actions..." rows="2"></textarea>
+              <button class="btn btn-primary" id="btnSendChat">Send</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Dedicated Music & Ambient Audio Player -->
+        <div class="tab-pane" id="pane-music">
+          <div class="section-card music-card-full">
+            <div class="music-artwork-box">
+              <div class="artwork-disc" id="artworkDisc">
+                <span class="disc-mascot"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg></span>
+              </div>
+              <div class="music-track-meta">
+                <h3 class="track-title-large" id="mainTrackTitle">Synthwave Focus Beat</h3>
+                <p class="track-artist-large" id="mainTrackArtist">Loly Ambient Lo-Fi Generator</p>
+                <div class="full-equalizer" id="fullEqualizer">
+                  <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="music-playback-controls">
+              <button class="player-btn" id="fullPrevBtn" title="Previous Track">⏮</button>
+              <button class="player-btn main-play-btn" id="fullPlayBtn" title="Play/Pause">▶</button>
+              <button class="player-btn" id="fullNextBtn" title="Next Track">⏭</button>
+            </div>
+
+            <div class="volume-control-row">
+              <span class="vol-label"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg> Volume:</span>
+              <input type="range" id="musicVolumeSlider" min="0" max="100" value="70" class="vol-slider" />
+              <span id="volValText">70%</span>
+            </div>
+
+            <div class="track-select-chips">
+              <button class="track-chip active" data-track="0"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg> Midnight Lo-Fi</button>
+              <button class="track-chip" data-track="1"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Cyber Synthwave</button>
+              <button class="track-chip" data-track="2"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/></svg> Chill Coffee Beats</button>
+              <button class="track-chip" data-track="3"><svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="12" y1="19" x2="12" y2="21"/></svg> Rain Ambient Focus</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Hook Simulator -->
+        <div class="tab-pane" id="pane-simulator">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="header-title">Interactive Agent Event Simulator</span>
+            </div>
+            <p class="card-desc">Simulate live agent events to test how Loly handles permissions, file diffs, and questions:</p>
+            
+            <div class="sim-grid">
+              <button class="btn btn-outline sim-btn" id="simBashApproval">
+                <strong>Bash Command Approval</strong>
+                <small>Simulates Claude Code asking to run `npm test`</small>
+              </button>
+              <button class="btn btn-outline sim-btn" id="simFileEdit">
+                <strong>File Modification Diff</strong>
+                <small>Simulates Gemini CLI modifying `server.js (+18 -4)`</small>
+              </button>
+              <button class="btn btn-outline sim-btn" id="simQuestion">
+                <strong>Multiple-Choice Prompt</strong>
+                <small>Simulates Antigravity asking for architectural choice</small>
+              </button>
+              <button class="btn btn-outline sim-btn" id="simFinished">
+                <strong>Agent Success Celebration</strong>
+                <small>Triggers completion chime & mascot bounce</small>
+              </button>
+            </div>
+          </div>
+
+          <div class="section-card">
+            <div class="section-header">
+              <span class="header-title">Connecting Real Agents</span>
+            </div>
+            <div class="cli-snippet-box">
+              <p class="snippet-label">1. Via HTTP POST (Linux & Windows):</p>
+              <code>curl -X POST http://127.0.0.1:4141/api/hook -H "Content-Type: application/json" -d '{"coucou_agent":"my-agent","title":"Running script","target":"python build.py"}'</code>
+
+              <p class="snippet-label">2. Via Unix Domain Socket (Linux):</p>
+              <code>echo '{"coucou_agent":"gemini-cli","title":"Scanning codebase"}' | nc -U /tmp/coucou.sock</code>
+
+              <p class="snippet-label">3. Synchronous Approval (Halts CLI until approved):</p>
+              <code>curl -X POST http://127.0.0.1:4141/api/hook/sync -H "Content-Type: application/json" -d '{"coucou_agent":"claude-code","requires_approval":true,"target":"rm -rf ./dist"}'</code>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 5: Settings & Preferences -->
+        <div class="tab-pane" id="pane-settings">
+          <div class="section-card">
+            <div class="section-header">
+              <span class="header-title">Gemini API Key Configuration</span>
+            </div>
+            <div class="setting-row">
+              <label for="apiKeyInput" class="setting-label">Google Gemini API Key:</label>
+              <div class="input-with-button">
+                <input type="password" id="apiKeyInput" placeholder="AIzaSy..." class="text-input" />
+                <button class="btn btn-primary" id="btnSaveKey">Save Key</button>
+              </div>
+              <small class="setting-help">Saved in local server memory or read from <code>GEMINI_API_KEY</code>.</small>
+              <div class="key-status-msg" id="keyStatusMsg"></div>
+            </div>
+
+            <div class="setting-row">
+              <label for="modelSelect" class="setting-label">Gemini Model:</label>
+              <select id="modelSelect" class="select-input">
+                <option value="gemini-2.5-flash" selected>Gemini 2.5 Flash (Fast, Recommended)</option>
+                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deep Reasoning)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Notification Sound & Weather Preferences -->
+          <div class="section-card">
+            <div class="section-header">
+              <span class="header-title">Sound & Island Preferences</span>
+            </div>
+            
+            <div class="setting-row-inline">
+              <label for="soundEffectsToggle" class="setting-label">Notification Audio & Haptics:</label>
+              <input type="checkbox" id="soundEffectsToggle" checked class="toggle-checkbox" />
+            </div>
+
+            <div class="setting-row">
+              <label for="cityWeatherInput" class="setting-label">Weather City Location:</label>
+              <div class="input-with-button">
+                <input type="text" id="cityWeatherInput" placeholder="e.g. London, Paris, Tokyo" class="text-input" />
+                <button class="btn btn-secondary" id="btnUpdateCity">Update</button>
+              </div>
+            </div>
+
+            <div class="setting-row">
+              <label for="themeSelect" class="setting-label">Color Palette & Theme:</label>
+              <select id="themeSelect" class="select-input">
+                <option value="white">White Mode (Clean Monochrome & High Contrast)</option>
+                <option value="dark">Pitch-Black OLED (Hardware Notch)</option>
+              </select>
+              <small class="setting-help">Supports clean white mode color palette or hardware pitch-black OLED.</small>
+            </div>
+
+            <div class="setting-row">
+              <button class="btn btn-subtle" id="btnTestSound">
+                <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                Test Notification Chime
+              </button>
+            </div>
+          </div>
+
+          <!-- Local Audit Storage Stats -->
+          <div class="section-card">
+            <div class="section-header">
+              <span class="header-title">Audit Log Statistics (loly.db)</span>
+            </div>
+            <div class="stats-grid">
+              <div class="stat-card">
+                <span class="stat-num" id="statSessions">0</span>
+                <span class="stat-lbl">Sessions</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-num" id="statEvents">0</span>
+                <span class="stat-lbl">Events Logged</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-num" id="statApprovals">0</span>
+                <span class="stat-lbl">Approvals</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </header>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
