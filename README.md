@@ -1,6 +1,6 @@
 # Loly — AI Agent Screen Companion & Notch Island
 
-> A desktop companion for **Linux and Windows** (inspired by [Coucou](https://github.com/Louis-CFM/coucou)), powered by the **Google Gemini API**, with an interactive animated companion mascot whose eyes track your cursor, a live agent activity ticker, one-click terminal approvals, file diff reviews, and local SQLite audit logging.
+> A desktop companion for **Linux and Windows** , powered by the **Google Gemini API**, with an interactive animated companion mascot whose eyes track your cursor, a live agent activity ticker, one-click terminal approvals, file diff reviews, and local SQLite audit logging.
 
 ---
 
