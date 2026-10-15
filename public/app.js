@@ -1,1209 +1,1421 @@
-// ==========================================================================
-// Loly Companion & Island App Logic
-// ==========================================================================
+/**
+ * Loly — AI Agent Screen Companion & Notch Island
+ * Layout matching exact Coucou hardware screenshots with automatic mascot reaction engine
+ */
 
-document.addEventListener('DOMContentLoaded', () => {
-  const islandWrapper = document.getElementById('islandWrapper');
-  const islandPill = document.getElementById('islandPill');
-  const islandDrawer = document.getElementById('islandDrawer');
-  const toggleDrawerBtn = document.getElementById('toggleDrawerBtn');
-  const pillAgentName = document.getElementById('pillAgentName');
-  const pillStatusBadge = document.getElementById('pillStatusBadge');
-  const tickerText = document.getElementById('tickerText');
-  const pillWave = document.getElementById('pillWave');
-  const pillQuickActions = document.getElementById('pillQuickActions');
-  const quickAllowBtn = document.getElementById('quickAllowBtn');
-  const quickDenyBtn = document.getElementById('quickDenyBtn');
-  const mascotStatusDot = document.getElementById('mascotStatusDot');
-  const mascotAvatar = document.getElementById('mascotAvatar');
-  const leftPupil = document.getElementById('leftPupil');
-  const rightPupil = document.getElementById('rightPupil');
+(function () {
+  'use strict';
 
-  // Drawer Tabs
-  const navTabs = document.querySelectorAll('.nav-tab');
-  const tabPanes = document.querySelectorAll('.tab-pane');
+  // =========================================================================
+  // 1. AUTOMATIC MASCOT REACTION ENGINE (NO MANUAL BUTTONS)
+  // =========================================================================
 
-  // Pending Approval Elements
-  const pendingSection = document.getElementById('pendingSection');
-  const approvalTitle = document.getElementById('approvalTitle');
-  const approvalAgent = document.getElementById('approvalAgent');
-  const approvalType = document.getElementById('approvalType');
-  const approvalTarget = document.getElementById('approvalTarget');
-  const approvalDiffContainer = document.getElementById('approvalDiffContainer');
-  const diffHeader = document.getElementById('diffHeader');
-  const diffBody = document.getElementById('diffBody');
-  const approvalOptionsContainer = document.getElementById('approvalOptionsContainer');
-  const approvalOptionsList = document.getElementById('approvalOptionsList');
-  const geminiReviewCard = document.getElementById('geminiReviewCard');
-  const geminiReviewText = document.getElementById('geminiReviewText');
-  const btnGeminiReview = document.getElementById('btnGeminiReview');
-  const btnAllow = document.getElementById('btnAllow');
-  const btnDeny = document.getElementById('btnDeny');
-  const btnAlways = document.getElementById('btnAlways');
+  const EXPRESSIONS = {
+    neutral: {
+      leftEyebrow: 'translate(0px, 0px) rotate(0deg)',
+      rightEyebrow: 'translate(0px, 0px) rotate(0deg)',
+      mouthD: 'M 196 220 Q 200 222 204 220',
+      mouthFill: 'none',
+      mouthStroke: '#a86055',
+      mouthOpenOpacity: '0',
+      eyeScaleY: 1,
+      pupilScale: 1,
+      headTilt: 0,
+      sleeveLeft: 'rotate(0deg) translate(0px, 0px)',
+      sleeveRight: 'rotate(0deg) translate(0px, 0px)',
+      bodyPose: 'translate(0px, 0px) rotate(0deg)',
+      activeFx: null
+    },
+    happy: {
+      leftEyebrow: 'translate(0px, -4px) rotate(-2deg)',
+      rightEyebrow: 'translate(0px, -4px) rotate(2deg)',
+      mouthD: 'M 194 218 Q 200 228 206 218 Z',
+      mouthFill: '#f43f5e',
+      mouthStroke: '#be123c',
+      mouthOpenOpacity: '0.9',
+      eyeScaleY: 0.52,
+      pupilScale: 1,
+      headTilt: 1.2,
+      sleeveLeft: 'rotate(-16deg) translate(-4px, -14px)',
+      sleeveRight: 'rotate(16deg) translate(4px, -14px)',
+      bodyPose: 'translate(0px, -3px) scale(1.02, 1)',
+      activeFx: null
+    },
+    curious: {
+      leftEyebrow: 'translate(-1px, -7px) rotate(-8deg)',
+      rightEyebrow: 'translate(1px, 2px) rotate(5deg)',
+      mouthD: 'M 197 220 Q 200 224 203 220 Q 200 217 197 220 Z',
+      mouthFill: '#be123c',
+      mouthStroke: '#9f1239',
+      mouthOpenOpacity: '0.6',
+      eyeScaleY: 1.05,
+      pupilScale: 1.05,
+      headTilt: 2.2,
+      sleeveLeft: 'rotate(-14deg) translate(-6px, -8px)',
+      sleeveRight: 'rotate(-4deg) translate(-2px, 0px)',
+      bodyPose: 'rotate(1deg)',
+      activeFx: 'curious'
+    },
+    thinking: {
+      leftEyebrow: 'translate(0px, -3px) rotate(4deg)',
+      rightEyebrow: 'translate(0px, -4px) rotate(-4deg)',
+      mouthD: 'M 195 221 Q 198 219 201 222 Q 204 220 206 221',
+      mouthFill: 'none',
+      mouthStroke: '#a86055',
+      mouthOpenOpacity: '0',
+      eyeScaleY: 0.95,
+      pupilScale: 0.95,
+      headTilt: -2.0,
+      sleeveLeft: 'rotate(4deg) translate(2px, 2px)',
+      sleeveRight: 'rotate(-30deg) translate(-16px, -24px)',
+      bodyPose: 'rotate(-1.4deg)',
+      activeFx: 'thinking'
+    },
+    surprised: {
+      leftEyebrow: 'translate(0px, -9px) rotate(0deg)',
+      rightEyebrow: 'translate(0px, -9px) rotate(0deg)',
+      mouthD: 'M 196 217 Q 200 227 204 217 Q 200 213 196 217 Z',
+      mouthFill: '#4c0519',
+      mouthStroke: '#be123c',
+      mouthOpenOpacity: '0.8',
+      eyeScaleY: 1.15,
+      pupilScale: 0.82,
+      headTilt: 0,
+      sleeveLeft: 'rotate(12deg) translate(6px, -4px)',
+      sleeveRight: 'rotate(-12deg) translate(-6px, -4px)',
+      bodyPose: 'translate(0px, 3px) scale(0.98, 1.01)',
+      activeFx: 'surprised'
+    },
+    sleepy: {
+      leftEyebrow: 'translate(0px, 2px) rotate(2deg)',
+      rightEyebrow: 'translate(0px, 2px) rotate(-2deg)',
+      mouthD: 'M 197 221 Q 200 223 203 221',
+      mouthFill: 'none',
+      mouthStroke: '#a86055',
+      mouthOpenOpacity: '0',
+      eyeScaleY: 0.22,
+      pupilScale: 0.9,
+      headTilt: 1.4,
+      sleeveLeft: 'rotate(-6deg) translate(-2px, 12px)',
+      sleeveRight: 'rotate(6deg) translate(2px, 12px)',
+      bodyPose: 'translate(0px, 2px) rotate(0.8deg)',
+      activeFx: 'sleepy'
+    },
+    working: {
+      leftEyebrow: 'translate(0px, -2px) rotate(6deg)',
+      rightEyebrow: 'translate(0px, -2px) rotate(-6deg)',
+      mouthD: 'M 195 220 Q 200 223 205 219',
+      mouthFill: 'none',
+      mouthStroke: '#a86055',
+      mouthOpenOpacity: '0',
+      eyeScaleY: 0.92,
+      pupilScale: 1,
+      headTilt: 0,
+      sleeveLeft: 'rotate(15deg) translate(12px, -8px)',
+      sleeveRight: 'rotate(-15deg) translate(-12px, -8px)',
+      bodyPose: 'translate(0px, -2px)',
+      activeFx: 'working'
+    }
+  };
 
-  // Activity Feed
-  const activityFeed = document.getElementById('activityFeed');
-  const eventCounter = document.getElementById('eventCounter');
+  class LolyAutoMascot {
+    constructor() {
+      this.currentExpression = 'working';
+      this.maxEyeOffset = { x: 5.5, y: 3.8 };
+      this.blinkTimer = null;
+      this.idleTimer = null;
 
-  // Gemini Chat Elements
-  const chatMessages = document.getElementById('chatMessages');
-  const chatInput = document.getElementById('chatInput');
-  const btnSendChat = document.getElementById('btnSendChat');
-  const fileDropZone = document.getElementById('fileDropZone');
-  const fileInput = document.getElementById('fileInput');
-  const dropLabel = document.getElementById('dropLabel');
-  const attachedFilePill = document.getElementById('attachedFilePill');
-  const attachedFileName = document.getElementById('attachedFileName');
-  const btnClearFile = document.getElementById('btnClearFile');
+      this._cacheDom();
+      this._bindEvents();
+      this._startBlinkCycle();
+      this._resetIdleTimer();
+      this.setExpression('working');
+    }
 
-  // Settings & Stats
-  const apiKeyInput = document.getElementById('apiKeyInput');
-  const btnSaveKey = document.getElementById('btnSaveKey');
-  const keyStatusMsg = document.getElementById('keyStatusMsg');
-  const modelSelect = document.getElementById('modelSelect');
-  const statSessions = document.getElementById('statSessions');
-  const statEvents = document.getElementById('statEvents');
-  const statApprovals = document.getElementById('statApprovals');
+    _cacheDom() {
+      this.wrapper = document.getElementById('characterWrapper');
+      this.svg = document.getElementById('loly-svg');
+      if (!this.svg) return;
 
-  // Simulator Buttons
-  const simBashApproval = document.getElementById('simBashApproval');
-  const simFileEdit = document.getElementById('simFileEdit');
-  const simQuestion = document.getElementById('simQuestion');
-  const simFinished = document.getElementById('simFinished');
+      this.dom = {
+        character: this.svg.querySelector('#loly-character'),
+        head: this.svg.querySelector('#loly-head'),
+        sleeveLeft: this.svg.querySelector('#loly-sleeve-left'),
+        sleeveRight: this.svg.querySelector('#loly-sleeve-right'),
+        pupilLeft: this.svg.querySelector('#loly-pupil-left'),
+        pupilRight: this.svg.querySelector('#loly-pupil-right'),
+        eyeLeft: this.svg.querySelector('#loly-eye-left'),
+        eyeRight: this.svg.querySelector('#loly-eye-right'),
+        eyebrowLeft: this.svg.querySelector('#loly-eyebrow-left'),
+        eyebrowRight: this.svg.querySelector('#loly-eyebrow-right'),
+        mouth: this.svg.querySelector('#loly-mouth'),
+        mouthOpen: this.svg.querySelector('#loly-mouth-open'),
+        fxThinking: this.svg.querySelector('#fx-thinking'),
+        fxCurious: this.svg.querySelector('#fx-curious'),
+        fxSurprised: this.svg.querySelector('#fx-surprised'),
+        fxSleepy: this.svg.querySelector('#fx-sleepy'),
+        fxWorking: this.svg.querySelector('#fx-working')
+      };
+    }
 
-  // State
-  let activePendingApproval = null;
-  let attachedFile = null;
-  let chatConversation = [];
-  let totalEventCount = 0;
+    _bindEvents() {
+      window.addEventListener('mousemove', (e) => {
+        this._onMouseMove(e);
+        this._resetIdleTimer();
+      }, { passive: true });
 
-  // ==========================================================================
-  // 1. Eye Tracking & Mascot Interactions
-  // ==========================================================================
-  function updateEyeTracking(clientX, clientY) {
-    if (!leftPupil || !rightPupil || !mascotAvatar) return;
+      document.addEventListener('mouseleave', () => this._onMouseLeave());
 
-    const rect = mascotAvatar.getBoundingClientRect();
-    const avatarCenterX = rect.left + rect.width / 2;
-    const avatarCenterY = rect.top + rect.height / 2;
-
-    const deltaX = clientX - avatarCenterX;
-    const deltaY = clientY - avatarCenterY;
-    const angle = Math.atan2(deltaY, deltaX);
-    const distance = Math.min(Math.hypot(deltaX, deltaY), 300);
-
-    const maxEyeRadius = 2.4;
-    const pupilShift = (distance / 300) * maxEyeRadius;
-
-    const offsetX = Math.cos(angle) * pupilShift;
-    const offsetY = Math.sin(angle) * pupilShift;
-
-    leftPupil.setAttribute('transform', `translate(${offsetX.toFixed(2)}, ${offsetY.toFixed(2)})`);
-    rightPupil.setAttribute('transform', `translate(${offsetX.toFixed(2)}, ${offsetY.toFixed(2)})`);
-  }
-
-  window.addEventListener('mousemove', (e) => {
-    updateEyeTracking(e.clientX, e.clientY);
-  });
-
-  // Mascot Blink Animation
-  function scheduleBlink() {
-    const nextBlink = Math.random() * 4000 + 3000;
-    setTimeout(() => {
-      leftPupil.style.transform = 'scaleY(0.1)';
-      rightPupil.style.transform = 'scaleY(0.1)';
-      setTimeout(() => {
-        leftPupil.style.transform = '';
-        rightPupil.style.transform = '';
-        scheduleBlink();
-      }, 140);
-    }, nextBlink);
-  }
-  scheduleBlink();
-
-  // Mascot Click Wiggle
-  mascotAvatar.addEventListener('click', (e) => {
-    e.stopPropagation();
-    mascotAvatar.animate([
-      { transform: 'translateY(0) scale(1)' },
-      { transform: 'translateY(-6px) scale(1.1)' },
-      { transform: 'translateY(0) scale(1)' }
-    ], { duration: 300, easing: 'ease-out' });
-    toggleDrawer();
-  });
-
-  // ==========================================================================
-  // Audio & Sound Engine (Web Audio API Synthesizer)
-  // Zero external MP3 files needed; works offline, instant, zero latency
-  // ==========================================================================
-  let audioCtx = null;
-  function getAudioContext() {
-    if (!audioCtx) {
-      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-      if (AudioContextClass) {
-        audioCtx = new AudioContextClass();
+      // Interactive poke reaction
+      const stageBox = document.getElementById('mascotStageBox');
+      if (stageBox) {
+        stageBox.addEventListener('click', () => {
+          this.triggerBounce();
+          this.setExpression('happy');
+          playChimeSound(680, 0.12);
+          setTimeout(() => this.setExpression('working'), 2500);
+        });
       }
     }
-    if (audioCtx && audioCtx.state === 'suspended') {
-      audioCtx.resume();
+
+    _onMouseMove(event) {
+      if (!this.wrapper) return;
+      const rect = this.wrapper.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height * 0.38;
+
+      const deltaX = event.clientX - centerX;
+      const deltaY = event.clientY - centerY;
+      const distance = Math.hypot(deltaX, deltaY);
+
+      const maxDistance = Math.max(window.innerWidth, window.innerHeight) * 0.5;
+      const factor = Math.min(distance / maxDistance, 1);
+
+      const angle = Math.atan2(deltaY, deltaX);
+      const offsetX = Math.cos(angle) * factor * this.maxEyeOffset.x;
+      const offsetY = Math.sin(angle) * factor * this.maxEyeOffset.y;
+
+      this._applyPupilPosition(offsetX, offsetY);
+
+      const normX = Math.max(-1, Math.min(1, deltaX / (window.innerWidth * 0.35)));
+      const expr = EXPRESSIONS[this.currentExpression] || EXPRESSIONS.neutral;
+
+      if (this.dom && this.dom.head) {
+        const headTilt = normX * 1.5 + (expr.headTilt || 0);
+        this.dom.head.style.transform = `rotate(${headTilt.toFixed(2)}deg)`;
+      }
+
+      if (this.dom && this.dom.character) {
+        const bodyShiftX = normX * 1.2;
+        this.dom.character.style.transform = `translate(${bodyShiftX.toFixed(1)}px, 0px)`;
+      }
     }
-    return audioCtx;
-  }
 
-  const soundEffectsToggle = document.getElementById('soundEffectsToggle');
-  const btnTestSound = document.getElementById('btnTestSound');
-  let soundEnabled = localStorage.getItem('loly_sound_enabled') !== 'false';
-  if (soundEffectsToggle) {
-    soundEffectsToggle.checked = soundEnabled;
-    soundEffectsToggle.addEventListener('change', () => {
-      soundEnabled = soundEffectsToggle.checked;
-      localStorage.setItem('loly_sound_enabled', soundEnabled);
-      if (soundEnabled) playChime();
-    });
-  }
+    _onMouseLeave() {
+      this._applyPupilPosition(0, 0);
+      const expr = EXPRESSIONS[this.currentExpression] || EXPRESSIONS.neutral;
+      if (this.dom && this.dom.head) {
+        this.dom.head.style.transform = `rotate(${expr.headTilt || 0}deg)`;
+      }
+    }
 
-  function playChime() {
-    if (!soundEnabled) return;
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      
-      const osc1 = ctx.createOscillator();
-      const osc2 = ctx.createOscillator();
-      const gain = ctx.createGain();
+    _applyPupilPosition(x, y) {
+      const expr = EXPRESSIONS[this.currentExpression] || EXPRESSIONS.neutral;
+      const scale = expr.pupilScale || 1;
+      const transformStr = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${scale})`;
 
-      osc1.type = 'sine';
-      osc2.type = 'sine';
+      if (this.dom && this.dom.pupilLeft) this.dom.pupilLeft.style.transform = transformStr;
+      if (this.dom && this.dom.pupilRight) this.dom.pupilRight.style.transform = transformStr;
+    }
 
-      osc1.frequency.setValueAtTime(739.99, now);
-      osc1.frequency.exponentialRampToValueAtTime(987.77, now + 0.12);
+    _startBlinkCycle() {
+      clearTimeout(this.blinkTimer);
+      const nextInterval = 2500 + Math.random() * 3500;
+      this.blinkTimer = setTimeout(() => {
+        this._executeBlink();
+        this._startBlinkCycle();
+      }, nextInterval);
+    }
 
-      osc2.frequency.setValueAtTime(1108.73, now + 0.1);
-      osc2.frequency.exponentialRampToValueAtTime(1479.98, now + 0.25);
+    _executeBlink() {
+      if (this.currentExpression === 'sleepy') return;
+      if (!this.dom || !this.dom.eyeLeft || !this.dom.eyeRight) return;
 
-      gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.18, now + 0.05);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.65);
+      this.dom.eyeLeft.style.transform = 'scaleY(0.08)';
+      this.dom.eyeRight.style.transform = 'scaleY(0.08)';
 
-      osc1.connect(gain);
-      osc2.connect(gain);
-      gain.connect(ctx.destination);
+      setTimeout(() => {
+        const expr = EXPRESSIONS[this.currentExpression] || EXPRESSIONS.neutral;
+        this.dom.eyeLeft.style.transform = `scaleY(${expr.eyeScaleY})`;
+        this.dom.eyeRight.style.transform = `scaleY(${expr.eyeScaleY})`;
 
-      osc1.start(now);
-      osc2.start(now + 0.1);
-      osc1.stop(now + 0.65);
-      osc2.stop(now + 0.65);
-    } catch (_) {}
-  }
+        if (Math.random() < 0.25) {
+          setTimeout(() => {
+            this.dom.eyeLeft.style.transform = 'scaleY(0.08)';
+            this.dom.eyeRight.style.transform = 'scaleY(0.08)';
+            setTimeout(() => {
+              this.dom.eyeLeft.style.transform = `scaleY(${expr.eyeScaleY})`;
+              this.dom.eyeRight.style.transform = `scaleY(${expr.eyeScaleY})`;
+            }, 90);
+          }, 120);
+        }
+      }, 110);
+    }
 
-  function playAlert() {
-    if (!soundEnabled) return;
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-      const now = ctx.currentTime;
+    _resetIdleTimer() {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = setTimeout(() => {
+        if (this.currentExpression === 'working') {
+          this.setExpression('neutral');
+        } else if (this.currentExpression === 'neutral') {
+          this.setExpression('sleepy');
+        }
+      }, 45000); // 45s of inactivity
+    }
 
-      const freqs = [523.25, 659.25, 783.99];
-      freqs.forEach((freq, idx) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+    setExpression(name) {
+      const expr = EXPRESSIONS[name] || EXPRESSIONS.neutral;
+      this.currentExpression = name in EXPRESSIONS ? name : 'neutral';
 
-        gain.gain.setValueAtTime(0.001, now + idx * 0.08);
-        gain.gain.linearRampToValueAtTime(0.15, now + idx * 0.08 + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.4);
+      if (!this.dom || !this.dom.eyebrowLeft) return;
 
-        osc.connect(gain);
-        gain.connect(ctx.destination);
+      this.dom.eyebrowLeft.style.transform = expr.leftEyebrow;
+      this.dom.eyebrowRight.style.transform = expr.rightEyebrow;
 
-        osc.start(now + idx * 0.08);
-        osc.stop(now + idx * 0.08 + 0.4);
+      if (this.dom.mouth) {
+        this.dom.mouth.setAttribute('d', expr.mouthD);
+        this.dom.mouth.setAttribute('stroke', expr.mouthStroke);
+        this.dom.mouth.setAttribute('fill', expr.mouthFill);
+      }
+      if (this.dom.mouthOpen) {
+        this.dom.mouthOpen.style.opacity = expr.mouthOpenOpacity;
+      }
+
+      if (this.dom.eyeLeft && this.dom.eyeRight) {
+        this.dom.eyeLeft.style.transform = `scaleY(${expr.eyeScaleY})`;
+        this.dom.eyeRight.style.transform = `scaleY(${expr.eyeScaleY})`;
+      }
+
+      if (this.dom.sleeveLeft && expr.sleeveLeft) this.dom.sleeveLeft.style.transform = expr.sleeveLeft;
+      if (this.dom.sleeveRight && expr.sleeveRight) this.dom.sleeveRight.style.transform = expr.sleeveRight;
+
+      const allFx = [this.dom.fxThinking, this.dom.fxCurious, this.dom.fxSurprised, this.dom.fxSleepy, this.dom.fxWorking];
+      allFx.forEach(fx => {
+        if (fx) {
+          fx.style.display = 'none';
+          fx.style.opacity = '0';
+        }
       });
-    } catch (_) {}
+
+      if (expr.activeFx) {
+        let activeElem = null;
+        if (expr.activeFx === 'thinking') activeElem = this.dom.fxThinking;
+        if (expr.activeFx === 'curious') activeElem = this.dom.fxCurious;
+        if (expr.activeFx === 'surprised') activeElem = this.dom.fxSurprised;
+        if (expr.activeFx === 'sleepy') activeElem = this.dom.fxSleepy;
+        if (expr.activeFx === 'working') activeElem = this.dom.fxWorking;
+
+        if (activeElem) {
+          activeElem.style.display = 'block';
+          activeElem.style.opacity = '1';
+        }
+      }
+    }
+
+    triggerBounce() {
+      if (!this.wrapper) return;
+      this.wrapper.classList.remove('hopping');
+      void this.wrapper.offsetWidth;
+      this.wrapper.classList.add('hopping');
+      setTimeout(() => this.wrapper.classList.remove('hopping'), 500);
+    }
+
+    startSpeaking() {
+      if (this.speakingInterval) return;
+      if (this.dom.fxThinking) this.dom.fxThinking.style.display = 'none';
+      let state = false;
+      this.speakingInterval = setInterval(() => {
+        state = !state;
+        if (this.dom.mouthOpen && this.dom.mouth) {
+          this.dom.mouthOpen.style.opacity = state ? '0.9' : '0.1';
+          this.dom.mouth.style.opacity = state ? '0.1' : '1';
+        }
+      }, 150);
+    }
+
+    stopSpeaking() {
+      if (this.speakingInterval) {
+        clearInterval(this.speakingInterval);
+        this.speakingInterval = null;
+      }
+      if (this.dom.mouthOpen && this.dom.mouth) {
+        this.dom.mouthOpen.style.opacity = '0';
+        this.dom.mouth.style.opacity = '1';
+      }
+    }
   }
 
-  function playHapticClick() {
-    if (!soundEnabled) return;
-    try {
-      const ctx = getAudioContext();
-      if (!ctx) return;
-      const now = ctx.currentTime;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = 'sine';
-      osc.frequency.setValueAtTime(320, now);
-      osc.frequency.exponentialRampToValueAtTime(80, now + 0.04);
+  // =========================================================================
+  // 2. INTERNAL STORAGE AUDIO DB (HOUSED IN SETTINGS)
+  // =========================================================================
 
-      gain.gain.setValueAtTime(0.08, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
+  class InternalAudioStorage {
+    constructor() {
+      this.dbName = 'LolyAudioStorage';
+      this.version = 1;
+      this.db = null;
+    }
 
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.04);
-    } catch (_) {}
+    async init() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(this.dbName, this.version);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('tracks')) {
+            db.createObjectStore('tracks', { keyPath: 'id', autoIncrement: true });
+          }
+        };
+        req.onsuccess = (e) => {
+          this.db = e.target.result;
+          resolve(this.db);
+        };
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async addTrack(file) {
+      if (!this.db) await this.init();
+      const track = {
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        fileName: file.name,
+        type: file.type || 'audio/mpeg',
+        blob: file,
+        addedAt: Date.now()
+      };
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('tracks', 'readwrite');
+        const store = tx.objectStore('tracks');
+        const req = store.add(track);
+        req.onsuccess = () => resolve({ id: req.result, ...track });
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async getAllTracks() {
+      if (!this.db) await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('tracks', 'readonly');
+        const store = tx.objectStore('tracks');
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result || []);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async deleteTrack(id) {
+      if (!this.db) await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('tracks', 'readwrite');
+        const store = tx.objectStore('tracks');
+        const req = store.delete(id);
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async clearAll() {
+      if (!this.db) await this.init();
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('tracks', 'readwrite');
+        const store = tx.objectStore('tracks');
+        const req = store.clear();
+        req.onsuccess = () => resolve(true);
+        req.onerror = () => reject(req.error);
+      });
+    }
   }
 
-  if (btnTestSound) {
-    btnTestSound.addEventListener('click', () => {
-      playChime();
-    });
-  }
-
-  // Island Ethereal Expansion Ripple
-  const islandRipple = document.getElementById('islandRipple');
-  function triggerRipple() {
-    if (!islandRipple) return;
-    islandRipple.classList.remove('animating');
-    void islandRipple.offsetWidth; // Force CSS reflow
-    islandRipple.classList.add('animating');
-    setTimeout(() => {
-      islandRipple.classList.remove('animating');
-    }, 1300);
-  }
-
-  // ==========================================================================
-  // Lo-Fi & Focus Ambient Music Engine (Procedural Web Audio Generator)
-  // ==========================================================================
-  const TRACKS = [
-    { title: 'Midnight Lo-Fi', artist: 'Loly Ambient Lo-Fi Generator', tempo: 72, chords: [[220, 261.63, 329.63, 392], [174.61, 220, 261.63, 329.63], [196, 246.94, 293.66, 349.23], [164.81, 196, 246.94, 293.66]] },
-    { title: 'Cyber Synthwave', artist: 'Loly Neon Synth Generator', tempo: 110, chords: [[130.81, 196, 246.94, 329.63], [146.83, 220, 261.63, 349.23], [110, 164.81, 220, 261.63], [123.47, 185, 220, 293.66]] },
-    { title: 'Chill Coffee Beats', artist: 'Loly Neo-Soul Beats', tempo: 80, chords: [[261.63, 329.63, 392, 493.88], [220, 261.63, 329.63, 392], [174.61, 220, 261.63, 329.63], [196, 246.94, 293.66, 392]] },
-    { title: 'Rain Ambient Focus', artist: 'Loly Ethereal Soundscape', tempo: 60, chords: [[174.61, 261.63, 329.63, 440], [196, 293.66, 349.23, 493.88], [220, 261.63, 329.63, 440], [164.81, 246.94, 329.63, 392]] }
+  const AMBIENT_PRESETS = [
+    { title: 'Midnight Lo-Fi', rootFreq: 196.00 },
+    { title: 'Cyber Synthwave', rootFreq: 220.00 },
+    { title: 'Chill Coffee Beats', rootFreq: 261.63 },
+    { title: 'Rain Focus', rootFreq: 174.61 }
   ];
 
-  let currentTrackIdx = 0;
-  let isPlayingMusic = false;
-  let musicInterval = null;
-  let musicGainNode = null;
-  let musicVolume = 0.7;
+  class SettingsMusicPlayer {
+    constructor(audioDb) {
+      this.db = audioDb;
+      this.audioElem = document.getElementById('internalAudioPlayer');
+      this.tracks = [];
+      this.currentIndex = 0;
+      this.isPlaying = false;
+      this.volume = 0.7;
+      this.currentObjectUrl = null;
+      this.synthInterval = null;
 
-  const miniPlayBtn = document.getElementById('miniPlayBtn');
-  const miniSkipBtn = document.getElementById('miniSkipBtn');
-  const miniTrackTitle = document.getElementById('miniTrackTitle');
-  const miniEqualizer = document.getElementById('miniEqualizer');
-
-  const fullPlayBtn = document.getElementById('fullPlayBtn');
-  const fullPrevBtn = document.getElementById('fullPrevBtn');
-  const fullNextBtn = document.getElementById('fullNextBtn');
-  const mainTrackTitle = document.getElementById('mainTrackTitle');
-  const mainTrackArtist = document.getElementById('mainTrackArtist');
-  const fullEqualizer = document.getElementById('fullEqualizer');
-  const artworkDisc = document.getElementById('artworkDisc');
-  const musicVolumeSlider = document.getElementById('musicVolumeSlider');
-  const volValText = document.getElementById('volValText');
-  const trackChips = document.querySelectorAll('.track-chip');
-
-  function updateMusicUI() {
-    const track = TRACKS[currentTrackIdx];
-    if (miniTrackTitle) miniTrackTitle.textContent = track.title;
-    if (mainTrackTitle) mainTrackTitle.textContent = track.title;
-    if (mainTrackArtist) mainTrackArtist.textContent = track.artist;
-
-    const playSymbol = isPlayingMusic ? '⏸' : '▶';
-    if (miniPlayBtn) miniPlayBtn.textContent = playSymbol;
-    if (fullPlayBtn) fullPlayBtn.textContent = playSymbol;
-
-    if (isPlayingMusic) {
-      if (miniEqualizer) miniEqualizer.classList.add('playing');
-      if (fullEqualizer) fullEqualizer.classList.add('playing');
-      if (artworkDisc) artworkDisc.classList.add('spinning');
-    } else {
-      if (miniEqualizer) miniEqualizer.classList.remove('playing');
-      if (fullEqualizer) fullEqualizer.classList.remove('playing');
-      if (artworkDisc) artworkDisc.classList.remove('spinning');
+      this._cacheDom();
+      this._bindEvents();
+      this.loadLibrary();
     }
 
-    trackChips.forEach((chip, idx) => {
-      if (idx === currentTrackIdx) chip.classList.add('active');
-      else chip.classList.remove('active');
-    });
-  }
-
-  let chordStep = 0;
-  function scheduleNextChord() {
-    if (!isPlayingMusic) return;
-    const ctx = getAudioContext();
-    if (!ctx) return;
-
-    const track = TRACKS[currentTrackIdx];
-    const chord = track.chords[chordStep % track.chords.length];
-    chordStep++;
-
-    const now = ctx.currentTime;
-    const beatSec = 60 / track.tempo;
-    const duration = beatSec * 2.8;
-
-    if (!musicGainNode) {
-      musicGainNode = ctx.createGain();
-      const filter = ctx.createBiquadFilter();
-      filter.type = 'lowpass';
-      filter.frequency.value = 1600;
-      musicGainNode.connect(filter);
-      filter.connect(ctx.destination);
+    _cacheDom() {
+      this.disc = document.getElementById('artworkDisc');
+      this.mainTitle = document.getElementById('mainTrackTitle');
+      this.mainArtist = document.getElementById('mainTrackArtist');
+      this.progressBar = document.getElementById('musicProgressBar');
+      this.currentTimeElem = document.getElementById('trackCurrentTime');
+      this.durationElem = document.getElementById('trackTotalDuration');
+      this.playBtn = document.getElementById('fullPlayBtn');
+      this.prevBtn = document.getElementById('fullPrevBtn');
+      this.nextBtn = document.getElementById('fullNextBtn');
+      this.volSlider = document.getElementById('musicVolumeSlider');
+      this.volText = document.getElementById('volValText');
+      this.muteBtn = document.getElementById('btnMuteToggle');
+      this.playlistUl = document.getElementById('playlistItems');
+      this.emptyMsg = document.getElementById('emptyPlaylistMsg');
+      this.fullEq = document.getElementById('fullEqualizer');
+      this.pillWave = document.getElementById('pillWave');
     }
-    musicGainNode.gain.setValueAtTime(musicVolume * 0.14, now);
 
-    chord.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const noteGain = ctx.createGain();
+    _bindEvents() {
+      if (this.playBtn) this.playBtn.addEventListener('click', () => this.togglePlay());
+      if (this.nextBtn) this.nextBtn.addEventListener('click', () => this.nextTrack());
+      if (this.prevBtn) this.prevBtn.addEventListener('click', () => this.prevTrack());
 
-      osc.type = i === 0 ? 'triangle' : 'sine';
-      osc.frequency.setValueAtTime(freq, now + i * 0.03);
+      if (this.audioElem) {
+        this.audioElem.addEventListener('timeupdate', () => {
+          if (!this.audioElem.duration) return;
+          const pct = (this.audioElem.currentTime / this.audioElem.duration) * 100;
+          if (this.progressBar) this.progressBar.value = pct;
+          if (this.currentTimeElem) this.currentTimeElem.textContent = this._formatTime(this.audioElem.currentTime);
+          if (this.durationElem) this.durationElem.textContent = this._formatTime(this.audioElem.duration);
+        });
+        this.audioElem.addEventListener('ended', () => this.nextTrack());
+      }
 
-      noteGain.gain.setValueAtTime(0.001, now);
-      noteGain.gain.linearRampToValueAtTime(0.22 / chord.length, now + 0.3);
-      noteGain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      if (this.progressBar) {
+        this.progressBar.addEventListener('input', (e) => {
+          if (this.audioElem && this.audioElem.duration) {
+            this.audioElem.currentTime = (e.target.value / 100) * this.audioElem.duration;
+          }
+        });
+      }
 
-      osc.connect(noteGain);
-      noteGain.connect(musicGainNode);
+      if (this.volSlider) {
+        this.volSlider.addEventListener('input', (e) => {
+          this.setVolume(parseInt(e.target.value, 10) / 100);
+        });
+      }
 
-      osc.start(now + i * 0.03);
-      osc.stop(now + duration);
-    });
+      if (this.muteBtn) {
+        this.muteBtn.addEventListener('click', () => {
+          this.setVolume(this.volume > 0 ? 0 : 0.7);
+        });
+      }
 
-    const nextInterval = (beatSec * 2.5) * 1000;
-    clearTimeout(musicInterval);
-    musicInterval = setTimeout(scheduleNextChord, nextInterval);
-  }
+      // Pickers
+      const btnFiles = document.getElementById('btnSelectFiles');
+      const inputFiles = document.getElementById('internalStorageInput');
+      if (btnFiles && inputFiles) {
+        btnFiles.addEventListener('click', () => inputFiles.click());
+        inputFiles.addEventListener('change', (e) => this._handleFilesSelected(e.target.files));
+      }
 
-  function startMusic() {
-    isPlayingMusic = true;
-    chordStep = 0;
-    getAudioContext();
-    scheduleNextChord();
-    updateMusicUI();
-  }
+      const btnFolder = document.getElementById('btnSelectFolder');
+      const inputFolder = document.getElementById('internalStorageFolderInput');
+      if (btnFolder && inputFolder) {
+        btnFolder.addEventListener('click', () => inputFolder.click());
+        inputFolder.addEventListener('change', (e) => this._handleFilesSelected(e.target.files));
+      }
 
-  function stopMusic() {
-    isPlayingMusic = false;
-    clearTimeout(musicInterval);
-    updateMusicUI();
-  }
+      const btnClear = document.getElementById('btnClearPlaylist');
+      if (btnClear) {
+        btnClear.addEventListener('click', async () => {
+          if (confirm('Clear local audio library?')) {
+            await this.db.clearAll();
+            this.pause();
+            await this.loadLibrary();
+          }
+        });
+      }
 
-  function toggleMusic() {
-    if (isPlayingMusic) stopMusic();
-    else startMusic();
-  }
-
-  if (miniPlayBtn) miniPlayBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
-  if (fullPlayBtn) fullPlayBtn.addEventListener('click', (e) => { e.stopPropagation(); toggleMusic(); });
-
-  function nextTrack() {
-    currentTrackIdx = (currentTrackIdx + 1) % TRACKS.length;
-    chordStep = 0;
-    updateMusicUI();
-    if (isPlayingMusic) {
-      clearTimeout(musicInterval);
-      scheduleNextChord();
+      // Ambient Presets
+      document.querySelectorAll('.track-chip[data-preset]').forEach(chip => {
+        chip.addEventListener('click', () => {
+          document.querySelectorAll('.track-chip[data-preset]').forEach(c => c.classList.remove('active'));
+          chip.classList.add('active');
+          const idx = parseInt(chip.getAttribute('data-preset'), 10);
+          this.playAmbientPreset(idx);
+        });
+      });
     }
-  }
 
-  function prevTrack() {
-    currentTrackIdx = (currentTrackIdx - 1 + TRACKS.length) % TRACKS.length;
-    chordStep = 0;
-    updateMusicUI();
-    if (isPlayingMusic) {
-      clearTimeout(musicInterval);
-      scheduleNextChord();
+    _formatTime(sec) {
+      if (isNaN(sec) || sec < 0) return '00:00';
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
     }
-  }
 
-  if (miniSkipBtn) miniSkipBtn.addEventListener('click', (e) => { e.stopPropagation(); nextTrack(); });
-  if (fullNextBtn) fullNextBtn.addEventListener('click', (e) => { e.stopPropagation(); nextTrack(); });
-  if (fullPrevBtn) fullPrevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevTrack(); });
+    setVolume(val) {
+      this.volume = Math.max(0, Math.min(1, val));
+      if (this.audioElem) this.audioElem.volume = this.volume;
+      if (this.volSlider) this.volSlider.value = Math.round(this.volume * 100);
+      if (this.volText) this.volText.textContent = `${Math.round(this.volume * 100)}%`;
+    }
 
-  trackChips.forEach(chip => {
-    chip.addEventListener('click', () => {
-      const idx = parseInt(chip.dataset.track, 10);
-      if (!isNaN(idx)) {
-        currentTrackIdx = idx;
-        chordStep = 0;
-        updateMusicUI();
-        if (isPlayingMusic) {
-          clearTimeout(musicInterval);
-          scheduleNextChord();
-        } else {
-          startMusic();
+    async _handleFilesSelected(files) {
+      if (!files || !files.length) return;
+      for (const file of files) {
+        if (file.type.startsWith('audio/') || /\.(mp3|wav|ogg|flac|m4a|aac)$/i.test(file.name)) {
+          await this.db.addTrack(file);
         }
       }
-    });
-  });
-
-  if (musicVolumeSlider) {
-    musicVolumeSlider.addEventListener('input', (e) => {
-      const val = parseInt(e.target.value, 10);
-      musicVolume = val / 100;
-      if (volValText) volValText.textContent = `${val}%`;
-      if (musicGainNode && audioCtx) {
-        musicGainNode.gain.setValueAtTime(musicVolume * 0.14, audioCtx.currentTime);
+      await this.loadLibrary();
+      if (!this.isPlaying && this.tracks.length) {
+        this.playTrack(0);
       }
-    });
-  }
-
-  // ==========================================================================
-  // 2. Island Drawer Toggling & Tabs
-  // ==========================================================================
-  const isDesktopApp = Boolean(window.desktopAPI && window.desktopAPI.isElectron);
-  if (isDesktopApp) {
-    document.documentElement.classList.add('in-electron');
-  }
-
-  let waveTimeout = null;
-  function triggerWaveActivity() {
-    if (!pillWave) return;
-    pillWave.classList.add('active');
-    clearTimeout(waveTimeout);
-    waveTimeout = setTimeout(() => {
-      pillWave.classList.remove('active');
-    }, 3200);
-  }
-
-  function toggleDrawer(forceOpen = null) {
-    const isOpen = islandDrawer.classList.contains('open');
-    const targetState = forceOpen !== null ? forceOpen : !isOpen;
-
-    playHapticClick();
-    triggerRipple();
-
-    if (targetState) {
-      islandDrawer.classList.add('open');
-      if (islandWrapper) islandWrapper.classList.add('drawer-open');
-      toggleDrawerBtn.setAttribute('title', 'Collapse Island Drawer');
-      // Auto-start music if not currently playing when island expands
-      if (!isPlayingMusic) {
-        startMusic();
-      }
-    } else {
-      islandDrawer.classList.remove('open');
-      if (islandWrapper) islandWrapper.classList.remove('drawer-open');
-      toggleDrawerBtn.setAttribute('title', 'Expand Island Drawer');
     }
 
-    if (window.desktopAPI && window.desktopAPI.resizeIsland) {
-      window.desktopAPI.resizeIsland(targetState).catch(() => {});
-    } else {
-      fetch('/api/resize-island', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ expanded: targetState })
+    async loadLibrary() {
+      this.tracks = await this.db.getAllTracks();
+      if (this.emptyMsg) {
+        this.emptyMsg.style.display = this.tracks.length ? 'none' : 'block';
+      }
+
+      if (!this.playlistUl) return;
+      this.playlistUl.innerHTML = '';
+
+      this.tracks.forEach((track, index) => {
+        const li = document.createElement('li');
+        li.className = `playlist-item ${index === this.currentIndex && this.isPlaying ? 'active' : ''}`;
+        li.innerHTML = `
+          <span>${track.name}</span>
+          <div>
+            <button type="button" class="btn btn-subtle btn-play-item">▶</button>
+            <button type="button" class="btn btn-subtle btn-del-item">&times;</button>
+          </div>
+        `;
+
+        li.querySelector('.btn-play-item').addEventListener('click', () => this.playTrack(index));
+        li.querySelector('.btn-del-item').addEventListener('click', async () => {
+          await this.db.deleteTrack(track.id);
+          await this.loadLibrary();
+        });
+        this.playlistUl.appendChild(li);
+      });
+    }
+
+    playTrack(index) {
+      if (!this.tracks || !this.tracks.length) return;
+      this.currentIndex = (index + this.tracks.length) % this.tracks.length;
+      const track = this.tracks[this.currentIndex];
+
+      clearInterval(this.synthInterval);
+      if (this.currentObjectUrl) URL.revokeObjectURL(this.currentObjectUrl);
+
+      this.currentObjectUrl = URL.createObjectURL(track.blob);
+      this.audioElem.src = this.currentObjectUrl;
+      this.audioElem.volume = this.volume;
+
+      this.audioElem.play().then(() => {
+        this.isPlaying = true;
+        this._updateUiActive(track.name, 'Internal Storage Audio');
       }).catch(() => {});
     }
-  }
 
-  const minimizeAppBtn = document.getElementById('minimizeAppBtn');
-  const closeAppBtn = document.getElementById('closeAppBtn');
-  if (minimizeAppBtn) {
-    minimizeAppBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      playHapticClick();
-      if (window.desktopAPI) window.desktopAPI.minimizeApp();
-    });
-  }
-  if (closeAppBtn) {
-    closeAppBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      playHapticClick();
-      if (window.desktopAPI) window.desktopAPI.closeApp();
-    });
-  }
+    playAmbientPreset(idx) {
+      const preset = AMBIENT_PRESETS[idx] || AMBIENT_PRESETS[0];
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
 
-  islandPill.addEventListener('click', (e) => {
-    // If clicking directly on controls, let them handle it
-    if (e.target.closest('#toggleDrawerBtn') || e.target.closest('#mascotAvatar') || e.target.closest('.electron-only') || e.target.closest('#pillQuickActions')) {
-      return;
-    }
-    toggleDrawer();
-  });
+      if (this.audioElem) this.audioElem.pause();
+      this.isPlaying = true;
+      this._updateUiActive(preset.title, 'Ambient Focus Synthesizer');
 
-  toggleDrawerBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    toggleDrawer();
-  });
-
-  navTabs.forEach(tab => {
-    tab.addEventListener('click', () => {
-      const targetPane = tab.dataset.tab;
-      navTabs.forEach(t => {
-        t.classList.remove('active');
-        t.setAttribute('aria-selected', 'false');
-      });
-      tabPanes.forEach(p => p.classList.remove('active'));
-
-      tab.classList.add('active');
-      tab.setAttribute('aria-selected', 'true');
-      const pane = document.getElementById(`pane-${targetPane}`);
-      if (pane) pane.classList.add('active');
-    });
-  });
-
-  // ==========================================================================
-  // 3. Activity Feed Helpers (Secure DOM construction)
-  // ==========================================================================
-  function addFeedItem(agentName, text, timestamp = new Date()) {
-    const emptyMsg = activityFeed.querySelector('.empty-feed');
-    if (emptyMsg) {
-      emptyMsg.remove();
-    }
-
-    const item = document.createElement('div');
-    item.className = 'feed-item';
-
-    const timeSpan = document.createElement('span');
-    timeSpan.className = 'feed-time';
-    const hours = String(timestamp.getHours()).padStart(2, '0');
-    const minutes = String(timestamp.getMinutes()).padStart(2, '0');
-    const seconds = String(timestamp.getSeconds()).padStart(2, '0');
-    timeSpan.textContent = `${hours}:${minutes}:${seconds}`;
-
-    const agentSpan = document.createElement('span');
-    agentSpan.className = 'feed-agent';
-    agentSpan.textContent = agentName;
-
-    const textSpan = document.createElement('span');
-    textSpan.className = 'feed-text';
-    textSpan.textContent = text;
-
-    item.appendChild(timeSpan);
-    item.appendChild(agentSpan);
-    item.appendChild(textSpan);
-
-    activityFeed.prepend(item);
-
-    // Keep max 40 items in DOM
-    while (activityFeed.children.length > 40) {
-      activityFeed.lastElementChild.remove();
-    }
-
-    totalEventCount++;
-    eventCounter.textContent = `${totalEventCount} events`;
-  }
-
-  // ==========================================================================
-  // 4. Pending Approval Render & Handlers
-  // ==========================================================================
-  function showPendingApproval(approval) {
-    activePendingApproval = approval;
-    approvalTitle.textContent = approval.actionType === 'question' ? 'User Choice Required' : 'Permission Request';
-    approvalAgent.textContent = approval.agentName || 'agent';
-    approvalType.textContent = approval.actionType || 'tool';
-    approvalTarget.textContent = approval.target || approval.details || '';
-
-    // Handle Diff
-    if (approval.diff && approval.diff.content) {
-      approvalDiffContainer.style.display = 'block';
-      diffHeader.textContent = `${approval.diff.file || 'File'} (+${approval.diff.added || 0} -${approval.diff.removed || 0})`;
-      diffBody.textContent = approval.diff.content;
-    } else {
-      approvalDiffContainer.style.display = 'none';
-    }
-
-    // Handle Question Options
-    approvalOptionsList.replaceChildren();
-    if (Array.isArray(approval.options) && approval.options.length > 0) {
-      approvalOptionsContainer.style.display = 'block';
-      approval.options.forEach((opt) => {
-        const item = document.createElement('div');
-        item.className = 'option-item';
-        const radio = document.createElement('input');
-        radio.type = 'radio';
-        radio.name = 'approvalOption';
-        radio.value = opt;
-        const label = document.createElement('span');
-        label.textContent = opt;
-
-        item.appendChild(radio);
-        item.appendChild(label);
-        item.addEventListener('click', () => {
-          radio.checked = true;
+      clearInterval(this.synthInterval);
+      const chord = () => {
+        if (!this.isPlaying) return;
+        const root = preset.rootFreq;
+        [root, root * 1.25, root * 1.5, root * 1.875].forEach(f => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.frequency.value = f;
+          gain.gain.setValueAtTime(0.001, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.05 * this.volume, ctx.currentTime + 1.2);
+          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.8);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + 5.0);
         });
-        approvalOptionsList.appendChild(item);
-      });
-    } else {
-      approvalOptionsContainer.style.display = 'none';
-    }
-
-    // Reset Gemini Review Card
-    geminiReviewCard.style.display = 'none';
-    geminiReviewText.textContent = '';
-
-    // Adjust button visibility for questions vs standard allow/deny
-    if (approval.actionType === 'question') {
-      btnAllow.textContent = 'Submit Answer';
-      btnAlways.style.display = 'none';
-    } else {
-      btnAllow.textContent = 'Allow';
-      btnAlways.style.display = 'inline-flex';
-    }
-
-    pendingSection.style.display = 'block';
-    if (pillQuickActions) pillQuickActions.style.display = 'flex';
-    mascotStatusDot.className = 'mascot-status-dot waiting';
-    pillStatusBadge.textContent = 'needs attention';
-    pillStatusBadge.className = 'status-badge waiting';
-    tickerText.textContent = `Approval needed: ${approval.target || approval.actionType}`;
-
-    // Play notification alert chime & ripple aura
-    playAlert();
-    triggerRipple();
-
-    // Automatically expand island so user sees the prompt immediately
-    toggleDrawer(true);
-  }
-
-  function hidePendingApproval() {
-    activePendingApproval = null;
-    pendingSection.style.display = 'none';
-    if (pillQuickActions) pillQuickActions.style.display = 'none';
-    geminiReviewCard.style.display = 'none';
-    mascotStatusDot.className = 'mascot-status-dot active';
-    pillStatusBadge.textContent = 'active';
-    pillStatusBadge.className = 'status-badge working';
-  }
-
-  async function resolveApproval(decision) {
-    if (!activePendingApproval) return;
-
-    let finalDecision = decision;
-    // Check if an option was selected
-    const selectedOption = approvalOptionsList.querySelector('input[name="approvalOption"]:checked');
-    if (selectedOption && (decision === 'allow' || decision === 'submit')) {
-      finalDecision = selectedOption.value;
-    }
-
-    try {
-      const res = await fetch('/api/approve', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: activePendingApproval.id,
-          decision: finalDecision
-        })
-      });
-      if (res.ok) {
-        addFeedItem(activePendingApproval.agentName, `Approval resolved [${finalDecision}]`);
-        hidePendingApproval();
-      }
-    } catch (err) {
-      console.error('Failed to submit approval:', err);
-    }
-  }
-
-  btnAllow.addEventListener('click', () => resolveApproval('allow'));
-  btnDeny.addEventListener('click', () => resolveApproval('deny'));
-  btnAlways.addEventListener('click', () => resolveApproval('always'));
-
-  // Quick In-Notch Approval buttons
-  if (quickAllowBtn) {
-    quickAllowBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      resolveApproval('allow');
-    });
-  }
-  if (quickDenyBtn) {
-    quickDenyBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      resolveApproval('deny');
-    });
-  }
-
-  // Gemini Safety Review Button
-  btnGeminiReview.addEventListener('click', async () => {
-    if (!activePendingApproval) return;
-
-    geminiReviewCard.style.display = 'block';
-    geminiReviewText.textContent = 'Asking Gemini to review action for security & stability...';
-    btnGeminiReview.disabled = true;
-
-    try {
-      const res = await fetch('/api/gemini/review-action', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          approvalId: activePendingApproval.id,
-          model: modelSelect.value
-        })
-      });
-      const data = await res.json();
-      if (data.review) {
-        geminiReviewText.textContent = data.review;
-      } else {
-        geminiReviewText.textContent = `Review failed: ${data.error || 'Unknown error'}`;
-      }
-    } catch (err) {
-      geminiReviewText.textContent = `Network error: ${err.message}`;
-    } finally {
-      btnGeminiReview.disabled = false;
-    }
-  });
-
-  // ==========================================================================
-  // 5. Server-Sent Events (SSE) Client
-  // ==========================================================================
-  function setupSSE() {
-    const eventSource = new EventSource('/api/events');
-
-    eventSource.addEventListener('init', (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        if (data.agent) {
-          pillAgentName.textContent = data.agent.name || 'gemini-cli';
-          pillStatusBadge.textContent = data.agent.status || 'idle';
-          tickerText.textContent = data.agent.tickerText || 'Connected and waiting...';
-        }
-        if (data.stats) {
-          statSessions.textContent = data.stats.totalSessions || 0;
-          statEvents.textContent = data.stats.totalEvents || 0;
-          statApprovals.textContent = data.stats.totalApprovals || 0;
-        }
-        if (Array.isArray(data.recentEvents)) {
-          data.recentEvents.slice().reverse().forEach(ev => {
-            addFeedItem(ev.agent_name, `${ev.title}${ev.details ? ': ' + ev.details : ''}`, new Date(ev.created_at));
-          });
-        }
-        if (Array.isArray(data.pendingApprovals) && data.pendingApprovals.length > 0) {
-          showPendingApproval(data.pendingApprovals[0]);
-        }
-        if (data.hasApiKey) {
-          keyStatusMsg.textContent = 'API Key is configured & active.';
-        }
-      } catch (err) {
-        console.error('Error handling SSE init:', err);
-      }
-    });
-
-    eventSource.addEventListener('agent_activity', (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        pillAgentName.textContent = data.agentName;
-        pillAgentName.setAttribute('data-agent', data.agentName.toLowerCase());
-        tickerText.textContent = `${data.title}${data.details ? ': ' + data.details : ''}`;
-        mascotStatusDot.className = 'mascot-status-dot active';
-        pillStatusBadge.textContent = 'working';
-        pillStatusBadge.className = 'status-badge working';
-        triggerWaveActivity();
-        addFeedItem(data.agentName, `${data.title} ${data.details || ''}`);
-        if (data.stats) {
-          statSessions.textContent = data.stats.totalSessions;
-          statEvents.textContent = data.stats.totalEvents;
-          statApprovals.textContent = data.stats.totalApprovals;
-        }
-      } catch (err) {
-        console.error('SSE activity parse error:', err);
-      }
-    });
-
-    eventSource.addEventListener('approval_request', (e) => {
-      try {
-        const approval = JSON.parse(e.data);
-        showPendingApproval(approval);
-      } catch (err) {
-        console.error('SSE approval_request parse error:', err);
-      }
-    });
-
-    eventSource.addEventListener('approval_resolved', (e) => {
-      try {
-        hidePendingApproval();
-      } catch (err) {
-        console.error('SSE approval_resolved parse error:', err);
-      }
-    });
-
-    eventSource.addEventListener('agent_status', (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        pillAgentName.textContent = data.name;
-        pillStatusBadge.textContent = data.status;
-        tickerText.textContent = data.tickerText;
-        if (data.status === 'success') {
-          playChime();
-          triggerRipple();
-          mascotAvatar.animate([
-            { transform: 'translateY(0)' },
-            { transform: 'translateY(-10px)' },
-            { transform: 'translateY(0)' }
-          ], { duration: 400 });
-        }
-      } catch (err) {
-        console.error('SSE status parse error:', err);
-      }
-    });
-
-    eventSource.addEventListener('config_updated', (e) => {
-      const data = JSON.parse(e.data);
-      keyStatusMsg.textContent = data.hasApiKey ? 'API Key is active.' : 'No API key set.';
-    });
-
-    eventSource.onerror = () => {
-      mascotStatusDot.className = 'mascot-status-dot';
-      pillStatusBadge.textContent = 'reconnecting';
-    };
-  }
-  setupSSE();
-
-  // ==========================================================================
-  // 6. Gemini Chat & File Attachment
-  // ==========================================================================
-  function appendChatBubble(role, content) {
-    const bubble = document.createElement('div');
-    bubble.className = `chat-bubble ${role}`;
-    bubble.textContent = content;
-    chatMessages.appendChild(bubble);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-  }
-
-  // Handle Drag & Drop File
-  function handleFile(file) {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64Content = e.target.result.split(',')[1];
-      attachedFile = {
-        name: file.name,
-        mimeType: file.type || 'text/plain',
-        base64: base64Content
       };
-      dropLabel.style.display = 'none';
-      attachedFilePill.style.display = 'inline-flex';
-      attachedFileName.textContent = file.name;
-    };
-    reader.readAsDataURL(file);
-  }
-
-  fileDropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) handleFile(e.target.files[0]);
-  });
-
-  ['dragenter', 'dragover'].forEach(name => {
-    fileDropZone.addEventListener(name, (e) => {
-      e.preventDefault();
-      fileDropZone.classList.add('dragover');
-    });
-  });
-
-  ['dragleave', 'drop'].forEach(name => {
-    fileDropZone.addEventListener(name, (e) => {
-      e.preventDefault();
-      fileDropZone.classList.remove('dragover');
-    });
-  });
-
-  fileDropZone.addEventListener('drop', (e) => {
-    if (e.dataTransfer.files.length > 0) {
-      handleFile(e.dataTransfer.files[0]);
-    }
-  });
-
-  btnClearFile.addEventListener('click', (e) => {
-    e.stopPropagation();
-    attachedFile = null;
-    fileInput.value = '';
-    attachedFilePill.style.display = 'none';
-    dropLabel.style.display = 'block';
-  });
-
-  async function sendChatMessage() {
-    const text = chatInput.value.trim();
-    if (!text && !attachedFile) return;
-
-    appendChatBubble('user', text + (attachedFile ? ` [Attached: ${attachedFile.name}]` : ''));
-    chatConversation.push({ role: 'user', content: text });
-    chatInput.value = '';
-
-    const currentFile = attachedFile;
-    if (attachedFile) {
-      attachedFile = null;
-      fileInput.value = '';
-      attachedFilePill.style.display = 'none';
-      dropLabel.style.display = 'block';
+      chord();
+      this.synthInterval = setInterval(chord, 5000);
     }
 
-    btnSendChat.disabled = true;
-    try {
-      const res = await fetch('/api/gemini/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: chatConversation,
-          model: modelSelect.value,
-          fileData: currentFile
-        })
-      });
-      const data = await res.json();
-      if (data.reply) {
-        appendChatBubble('assistant', data.reply);
-        chatConversation.push({ role: 'assistant', content: data.reply });
+    togglePlay() {
+      if (this.isPlaying) {
+        this.pause();
       } else {
-        appendChatBubble('assistant', `Error: ${data.error || 'Failed to get answer'}`);
+        if (this.tracks && this.tracks.length) {
+          this.playTrack(this.currentIndex);
+        } else {
+          this.playAmbientPreset(0);
+        }
       }
-    } catch (err) {
-      appendChatBubble('assistant', `Network error: ${err.message}`);
-    } finally {
-      btnSendChat.disabled = false;
+    }
+
+    pause() {
+      this.isPlaying = false;
+      clearInterval(this.synthInterval);
+      if (this.audioElem) this.audioElem.pause();
+      if (this.playBtn) this.playBtn.textContent = '▶';
+      if (this.disc) this.disc.classList.remove('spinning');
+      if (this.fullEq) this.fullEq.classList.remove('active');
+      if (this.pillWave) this.pillWave.classList.remove('active');
+    }
+
+    nextTrack() {
+      if (this.tracks && this.tracks.length) {
+        this.playTrack(this.currentIndex + 1);
+      } else {
+        this.playAmbientPreset((this.currentIndex + 1) % AMBIENT_PRESETS.length);
+      }
+    }
+
+    prevTrack() {
+      if (this.tracks && this.tracks.length) {
+        this.playTrack(this.currentIndex - 1);
+      } else {
+        this.playAmbientPreset((this.currentIndex - 1 + AMBIENT_PRESETS.length) % AMBIENT_PRESETS.length);
+      }
+    }
+
+    _updateUiActive(title, artist) {
+      if (title && this.mainTitle) this.mainTitle.textContent = title;
+      if (artist && this.mainArtist) this.mainArtist.textContent = artist;
+      if (this.playBtn) this.playBtn.textContent = '⏸';
+      if (this.disc) this.disc.classList.add('spinning');
+      if (this.fullEq) this.fullEq.classList.add('active');
+      if (this.pillWave) this.pillWave.classList.add('active');
     }
   }
 
-  btnSendChat.addEventListener('click', sendChatMessage);
-  chatInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendChatMessage();
-    }
-  });
-
-  // ==========================================================================
-  // 7. Settings & Key Management
-  // ==========================================================================
-  btnSaveKey.addEventListener('click', async () => {
-    const key = apiKeyInput.value.trim();
-    if (!key) return;
-
+  function playChimeSound(freq = 600, duration = 0.15) {
+    const soundToggle = document.getElementById('soundEffectsToggle');
+    if (soundToggle && !soundToggle.checked) return;
     try {
-      const res = await fetch('/api/config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ apiKey: key })
-      });
-      const data = await res.json();
-      if (data.success) {
-        apiKeyInput.value = '';
-        keyStatusMsg.textContent = 'Key saved securely in local server memory!';
-      }
-    } catch (err) {
-      keyStatusMsg.textContent = 'Failed to save key.';
-    }
-  });
-
-  // ==========================================================================
-  // 8. Event Simulator Actions
-  // ==========================================================================
-  simBashApproval.addEventListener('click', async () => {
-    await fetch('/api/hook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        coucou_agent: 'claude-code',
-        action_type: 'bash_command',
-        title: 'Run test suite',
-        target: 'npm test -- --coverage',
-        requires_approval: true
-      })
-    });
-  });
-
-  simFileEdit.addEventListener('click', async () => {
-    await fetch('/api/hook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        coucou_agent: 'gemini-cli',
-        action_type: 'file_edit',
-        title: 'Editing backend routing',
-        target: 'server.js',
-        diff: {
-          file: 'server.js',
-          added: 18,
-          removed: 4,
-          content: '@@ -42,4 +42,18 @@\n- const legacyRoute = true;\n+ const router = createModernRouter();\n+ router.register(\"/api/gemini\", handleGemini);\n+ router.register(\"/api/hook\", handleAgentHook);'
-        },
-        requires_approval: true
-      })
-    });
-  });
-
-  simQuestion.addEventListener('click', async () => {
-    await fetch('/api/hook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        coucou_agent: 'antigravity',
-        action_type: 'question',
-        title: 'Database Architecture Decision',
-        target: 'Which database engine should be used for production logs?',
-        options: [
-          'SQLite (Local Embedded, Zero Latency)',
-          'PostgreSQL (Remote Distributed)',
-          'In-Memory Cache Only'
-        ],
-        requires_approval: true
-      })
-    });
-  });
-
-  simFinished.addEventListener('click', async () => {
-    await fetch('/api/hook', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        coucou_agent: 'antigravity',
-        event_type: 'completed',
-        title: 'All tasks completed successfully!',
-        details: '14 files inspected, 3 tests passed'
-      })
-    });
-  });
-
-  // ==========================================================================
-  // 9. Live Digital Clock & Weather Updater
-  // ==========================================================================
-  const clockDisplay = document.getElementById('clockDisplay');
-  const pillTimeTag = document.getElementById('pillTimeTag');
-  const weatherIcon = document.getElementById('weatherIcon');
-  const weatherDisplay = document.getElementById('weatherDisplay');
-  const cityWeatherInput = document.getElementById('cityWeatherInput');
-  const btnUpdateCity = document.getElementById('btnUpdateCity');
-
-  function updateClock() {
-    const now = new Date();
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const seconds = String(now.getSeconds()).padStart(2, '0');
-
-    if (clockDisplay) clockDisplay.textContent = `${hours}:${minutes}:${seconds}`;
-    if (pillTimeTag) pillTimeTag.textContent = `${hours}:${minutes}`;
-  }
-  setInterval(updateClock, 1000);
-  updateClock();
-
-  function getWeatherIconSvg(desc) {
-    const d = (desc || '').toLowerCase();
-    if (d.includes('rain') || d.includes('drizzle')) {
-      return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 13a4 4 0 0 0-8 0"/><path d="M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25"/><line x1="8" y1="19" x2="8" y2="21"/><line x1="12" y1="19" x2="12" y2="21"/><line x1="16" y1="19" x2="16" y2="21"/></svg>';
-    }
-    if (d.includes('thunder') || d.includes('lightning')) {
-      return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>';
-    }
-    if (d.includes('snow') || d.includes('ice') || d.includes('flurry')) {
-      return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="2" x2="12" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/><line x1="19.07" y1="4.93" x2="4.93" y2="19.07"/></svg>';
-    }
-    if (d.includes('cloud') || d.includes('overcast')) {
-      return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>';
-    }
-    if (d.includes('fog') || d.includes('mist')) {
-      return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="16" x2="20" y2="16"/></svg>';
-    }
-    // Clear / default sun
-    return '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>';
-  }
-
-  let savedCity = localStorage.getItem('loly_city') || '';
-  if (cityWeatherInput && savedCity) {
-    cityWeatherInput.value = savedCity;
-  }
-
-  async function fetchWeather(city = '') {
-    try {
-      const targetCity = city || savedCity;
-      const url = targetCity ? `/api/weather?city=${encodeURIComponent(targetCity)}` : '/api/weather';
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        if (weatherDisplay) weatherDisplay.textContent = `${data.tempC}°C ${data.desc}`;
-        if (weatherIcon) weatherIcon.innerHTML = getWeatherIconSvg(data.desc);
-      }
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
     } catch (_) {}
   }
-  fetchWeather();
-  setInterval(() => fetchWeather(), 10 * 60 * 1000); // Check every 10 min
 
-  if (btnUpdateCity && cityWeatherInput) {
-    btnUpdateCity.addEventListener('click', () => {
-      const city = cityWeatherInput.value.trim();
-      savedCity = city;
-      localStorage.setItem('loly_city', city);
-      playHapticClick();
-      fetchWeather(city);
+  // =========================================================================
+  // 3. MAIN UI APP INITIALIZER
+  // =========================================================================
+
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Instantiate Mascot with automatic reactions
+    const loly = new LolyAutoMascot();
+
+    // Instantiate Internal Music Player
+    const audioDb = new InternalAudioStorage();
+    await audioDb.init();
+    const musicPlayer = new SettingsMusicPlayer(audioDb);
+
+    // Expand/Collapse Island
+    const wrapper = document.getElementById('islandWrapper');
+    const pill = document.getElementById('islandPill');
+    const toggleBtn = document.getElementById('toggleDrawerBtn');
+    const collapseBtn = document.getElementById('btnCollapseDrawer');
+    let isExpanded = true; // Open expanded as requested by user
+
+    function setExpanded(expand) {
+      isExpanded = expand;
+      if (isExpanded) {
+        wrapper.classList.add('is-expanded');
+      } else {
+        wrapper.classList.remove('is-expanded');
+      }
+
+      if (window.desktopAPI && window.desktopAPI.resizeIsland) {
+        window.desktopAPI.resizeIsland(isExpanded);
+      } else {
+        fetch('/api/resize-island', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ expanded: isExpanded })
+        }).catch(() => {});
+      }
+    }
+
+    // Start expanded initially to match screenshot
+    setExpanded(true);
+
+    if (pill) {
+      pill.addEventListener('click', (e) => {
+        if (e.target.closest('.pill-controls') || e.target.closest('.pill-quick-actions')) return;
+        setExpanded(true);
+      });
+    }
+
+    if (toggleBtn) toggleBtn.addEventListener('click', (e) => { e.stopPropagation(); setExpanded(true); });
+    if (collapseBtn) collapseBtn.addEventListener('click', () => setExpanded(false));
+
+    // Desktop window controls
+    const minBtn = document.getElementById('minimizeAppBtn');
+    if (minBtn && window.desktopAPI && window.desktopAPI.minimizeApp) {
+      minBtn.addEventListener('click', (e) => { e.stopPropagation(); window.desktopAPI.minimizeApp(); });
+    }
+    const closeBtn = document.getElementById('closeAppBtn');
+    if (closeBtn && window.desktopAPI && window.desktopAPI.closeApp) {
+      closeBtn.addEventListener('click', (e) => { e.stopPropagation(); window.desktopAPI.closeApp(); });
+    }
+
+    // =========================================================================
+    // 4. VIEWS SWITCHER (MATCHING SCREENSHOTS 1, 2, 3)
+    // =========================================================================
+
+    const views = {
+      chat: document.getElementById('viewChat'),
+      drop: document.getElementById('viewDrop'),
+      home: document.getElementById('viewHome')
+    };
+
+    const navBtns = {
+      chat: document.getElementById('tabBtnChat'),
+      home: document.getElementById('tabBtnHome'),
+      drop: document.getElementById('tabBtnDrop')
+    };
+
+    function switchView(viewName) {
+      Object.keys(views).forEach(key => {
+        if (views[key]) views[key].classList.toggle('active', key === viewName);
+      });
+      Object.keys(navBtns).forEach(key => {
+        if (navBtns[key]) navBtns[key].classList.toggle('active', key === viewName);
+      });
+
+      // Automatic mascot reactions on view change
+      if (viewName === 'drop') {
+        loly.setExpression('curious');
+      } else if (viewName === 'home') {
+        loly.setExpression('neutral');
+      } else {
+        loly.setExpression('working');
+      }
+    }
+
+    if (navBtns.chat) navBtns.chat.addEventListener('click', () => switchView('chat'));
+    if (navBtns.home) navBtns.home.addEventListener('click', () => switchView('home'));
+    if (navBtns.drop) navBtns.drop.addEventListener('click', () => switchView('drop'));
+
+    // =========================================================================
+    // 5. DRAG AND DROP HANDLING (AUTO-SWITCH TO DROP VIEW)
+    // =========================================================================
+
+    let currentAttachedFile = null;
+    const attachedFileChip = document.getElementById('attachedFileChip');
+    const attachedFileName = document.getElementById('attachedFileName');
+    const btnRemoveAttachment = document.getElementById('btnRemoveAttachment');
+    const globalDropBox = document.getElementById('globalDropBox');
+    const globalFileInput = document.getElementById('globalFileInput');
+
+    window.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      switchView('drop');
+      if (globalDropBox) globalDropBox.classList.add('dragover');
+      loly.setExpression('curious');
     });
-  }
 
-  // ==========================================================================
-  // 10. Quick 1-Click App Launcher
-  // ==========================================================================
-  document.querySelectorAll('.launcher-chip').forEach(chip => {
-    chip.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const appName = chip.dataset.app;
-      playHapticClick();
-      chip.style.transform = 'scale(0.92)';
-      setTimeout(() => { chip.style.transform = ''; }, 150);
+    window.addEventListener('dragleave', (e) => {
+      if (e.clientX <= 0 || e.clientY <= 0) {
+        if (globalDropBox) globalDropBox.classList.remove('dragover');
+      }
+    });
+
+    window.addEventListener('drop', (e) => {
+      e.preventDefault();
+      if (globalDropBox) globalDropBox.classList.remove('dragover');
+      if (e.dataTransfer.files && e.dataTransfer.files.length) {
+        attachFile(e.dataTransfer.files[0]);
+        switchView('chat');
+        loly.setExpression('happy');
+        loly.triggerBounce();
+        playChimeSound(750, 0.15);
+      }
+    });
+
+    if (globalDropBox && globalFileInput) {
+      globalDropBox.addEventListener('click', () => globalFileInput.click());
+      globalFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length) {
+          attachFile(e.target.files[0]);
+          switchView('chat');
+          loly.setExpression('happy');
+        }
+      });
+    }
+
+    function attachFile(file) {
+      const reader = new FileReader();
+      const isImg = file.type.startsWith('image/');
+      reader.onload = () => {
+        currentAttachedFile = {
+          name: file.name,
+          type: file.type || 'text/plain',
+          content: reader.result
+        };
+        if (attachedFileName) attachedFileName.textContent = file.name;
+        if (attachedFileChip) attachedFileChip.style.display = 'inline-flex';
+      };
+      if (isImg) reader.readAsDataURL(file);
+      else reader.readAsText(file);
+    }
+
+    if (btnRemoveAttachment) {
+      btnRemoveAttachment.addEventListener('click', () => {
+        currentAttachedFile = null;
+        if (attachedFileChip) attachedFileChip.style.display = 'none';
+      });
+    }
+
+    // =========================================================================
+    // 6. CHAT INPUT & AUTOMATIC MASCOT REACTION
+    // =========================================================================
+
+    const chatInput = document.getElementById('chatInput');
+    const btnSendChat = document.getElementById('btnSendChat');
+    const chatPopup = document.getElementById('chatDialoguePopup');
+    const dialogueInner = document.getElementById('dialogueInner');
+    const chatHistory = [];
+
+    if (chatInput) {
+      // Automatic reaction while user types
+      chatInput.addEventListener('input', () => {
+        if (chatInput.value.length > 0) {
+          loly.setExpression('thinking');
+        }
+      });
+
+      chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          sendChat();
+        }
+      });
+    }
+
+    if (btnSendChat) btnSendChat.addEventListener('click', sendChat);
+
+    async function sendChat() {
+      const text = chatInput ? chatInput.value.trim() : '';
+      if (!text && !currentAttachedFile) return;
+
+      chatHistory.push({ role: 'user', content: text });
+      if (chatInput) chatInput.value = '';
+
+      loly.setExpression('thinking');
+
+      let fileData = null;
+      if (currentAttachedFile) {
+        fileData = {
+          name: currentAttachedFile.name,
+          type: currentAttachedFile.type,
+          content: currentAttachedFile.content
+        };
+        currentAttachedFile = null;
+        if (attachedFileChip) attachedFileChip.style.display = 'none';
+      }
+
+      let fullReply = '';
+      try {
+        const chatModelSelect = document.getElementById('chatModelSelect');
+        const model = chatModelSelect ? chatModelSelect.value : (localStorage.getItem('loly_active_model') || 'gemini-3.5-flash');
+
+        if (chatPopup && dialogueInner) {
+          chatPopup.style.display = 'block';
+          dialogueInner.textContent = '...';
+        }
+
+        const res = await fetch('/api/gemini/chat-stream', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages: chatHistory, model, fileData })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `HTTP error ${res.status}`);
+        }
+
+        loly.setExpression('happy');
+        loly.startSpeaking();
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        dialogueInner.textContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop();
+
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith('data:')) continue;
+            const dataStr = trimmed.slice(5).trim();
+            if (!dataStr) continue;
+            try {
+              const parsed = JSON.parse(dataStr);
+              if (parsed.error) {
+                throw new Error(parsed.error);
+              }
+              if (parsed.chunk) {
+                fullReply += parsed.chunk;
+                dialogueInner.textContent = fullReply;
+                chatPopup.scrollTop = chatPopup.scrollHeight;
+              }
+              if (parsed.done && parsed.fullReply) {
+                fullReply = parsed.fullReply;
+                dialogueInner.textContent = fullReply;
+              }
+            } catch (jsonErr) {
+              if (jsonErr.message && !jsonErr.message.includes('JSON')) {
+                throw jsonErr;
+              }
+            }
+          }
+        }
+
+        loly.stopSpeaking();
+        chatHistory.push({ role: 'assistant', content: fullReply || 'Done.' });
+        loly.setExpression('happy');
+        loly.triggerBounce();
+        playChimeSound(820, 0.2);
+      } catch (err) {
+        loly.stopSpeaking();
+        if (chatPopup && dialogueInner) {
+          chatPopup.style.display = 'block';
+          dialogueInner.textContent = fullReply ? `${fullReply} [interrupted: ${err.message}]` : `Request failed: ${err.message}`;
+        }
+        loly.setExpression('surprised');
+      }
+    }
+
+    // =========================================================================
+    // CHAT MODEL SELECTOR CONTROLLER & DYNAMIC MODEL LOADING
+    // =========================================================================
+    const chatModelSelect = document.getElementById('chatModelSelect');
+    const btnRefreshModels = document.getElementById('btnRefreshModels');
+
+    async function loadAvailableModels(forceRefresh = false) {
+      if (!chatModelSelect) return;
+
+      const savedModel = localStorage.getItem('loly_active_model') || 'gemini-3.5-flash';
 
       try {
+        const res = await fetch('/api/gemini/models');
+        if (!res.ok) return;
+        const data = await res.json();
+        const models = data.models || [];
+        const serverModel = data.currentModel;
+
+        if (Array.isArray(models) && models.length > 0) {
+          const currentSelected = chatModelSelect.value || savedModel || serverModel || 'gemini-3.5-flash';
+          chatModelSelect.innerHTML = '';
+
+          models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name || m.displayName || m.id;
+            if (m.id === currentSelected) {
+              opt.selected = true;
+            }
+            chatModelSelect.appendChild(opt);
+          });
+
+          // Ensure selection is valid
+          if (!chatModelSelect.value && chatModelSelect.options.length > 0) {
+            chatModelSelect.selectedIndex = 0;
+          }
+
+          localStorage.setItem('loly_active_model', chatModelSelect.value);
+        }
+      } catch (err) {
+        console.warn('Unable to load dynamic models:', err);
+      }
+    }
+
+    if (chatModelSelect) {
+      const cached = localStorage.getItem('loly_active_model');
+      if (cached) {
+        chatModelSelect.value = cached;
+      }
+
+      chatModelSelect.addEventListener('change', async () => {
+        const selected = chatModelSelect.value;
+        localStorage.setItem('loly_active_model', selected);
+        try {
+          await fetch('/api/gemini/model', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ model: selected })
+          });
+        } catch (_) {}
+      });
+    }
+
+    if (btnRefreshModels) {
+      btnRefreshModels.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        btnRefreshModels.style.transform = 'rotate(360deg)';
+        await loadAvailableModels(true);
+        setTimeout(() => { btnRefreshModels.style.transform = ''; }, 450);
+      });
+    }
+
+    // Initialize models list
+    loadAvailableModels();
+
+    // =========================================================================
+    // 7. INTEGRATIONS PILLS (LAUNCH TERMINAL, VS CODE, BROWSER, FILES)
+    // =========================================================================
+
+    document.querySelectorAll('.int-pill').forEach(pillBtn => {
+      pillBtn.addEventListener('click', () => {
+        const appName = pillBtn.getAttribute('data-app');
         if (window.desktopAPI && window.desktopAPI.launchApp) {
-          await window.desktopAPI.launchApp(appName);
+          window.desktopAPI.launchApp(appName);
         } else {
-          await fetch('/api/launch-app', {
+          fetch('/api/launch-app', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ appName })
-          });
+          }).catch(() => {});
         }
-        tickerText.textContent = `Launched ${appName.toUpperCase()}`;
-      } catch (err) {
-        console.error('Launch app error:', err);
-      }
+        loly.setExpression('happy');
+        playChimeSound(700, 0.1);
+      });
     });
-  });
 
-  // ==========================================================================
-  // 11. Quick Prompt Chips (Gemini AI Chat)
-  // ==========================================================================
-  document.querySelectorAll('.prompt-chip, .quick-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      playHapticClick();
-      const prompt = chip.dataset.prompt;
-      if (prompt && chatInput) {
-        chatInput.value = prompt;
-        chatInput.focus();
+    // =========================================================================
+    // 8. SETTINGS MODAL OVERLAY CONTROLLER
+    // =========================================================================
+
+    const settingsOverlay = document.getElementById('settingsOverlay');
+    const btnSettingsToggle = document.getElementById('btnSettingsToggle');
+    const linkOpenSettings = document.getElementById('linkOpenSettings');
+    const btnCloseSettings = document.getElementById('btnCloseSettings');
+
+    function openSettings() {
+      loly.setExpression('curious');
+      loly.triggerBounce();
+      playChimeSound(700, 0.1);
+
+      if (window.desktopAPI && window.desktopAPI.openSettingsWindow) {
+        window.desktopAPI.openSettingsWindow();
+      } else {
+        const w = 840;
+        const h = 660;
+        const left = Math.round((screen.width - w) / 2);
+        const top = Math.max(40, Math.round((screen.height - h) / 2));
+        const settingsWin = window.open(
+          '/settings.html',
+          'LolySettingsWindow',
+          `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes,menubar=no,toolbar=no`
+        );
+        if (settingsWin) {
+          settingsWin.focus();
+        } else if (settingsOverlay) {
+          // Fallback if browser popups blocked
+          settingsOverlay.style.display = 'flex';
+        }
       }
-    });
-  });
-
-  // ==========================================================================
-  // 12. Theme Management (White Mode Color Palette & OLED Hardware Notch)
-  // ==========================================================================
-  const quickThemeBtn = document.getElementById('quickThemeBtn');
-  const themeSelect = document.getElementById('themeSelect');
-  
-  // Default to white mode as preferred by user rule
-  let currentTheme = localStorage.getItem('loly_theme') || 'white';
-
-  const ICON_SUN = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>`;
-  const ICON_MOON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>`;
-
-  function applyTheme(theme) {
-    currentTheme = theme;
-    localStorage.setItem('loly_theme', theme);
-    if (theme === 'white') {
-      document.body.classList.add('white-mode');
-      if (quickThemeBtn) quickThemeBtn.innerHTML = ICON_MOON;
-      if (themeSelect) themeSelect.value = 'white';
-    } else {
-      document.body.classList.remove('white-mode');
-      if (quickThemeBtn) quickThemeBtn.innerHTML = ICON_SUN;
-      if (themeSelect) themeSelect.value = 'dark';
     }
-  }
 
-  // Initialize theme
-  applyTheme(currentTheme);
+    function closeSettings() {
+      if (settingsOverlay) settingsOverlay.style.display = 'none';
+      loly.setExpression('working');
+    }
 
-  if (quickThemeBtn) {
-    quickThemeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      playHapticClick();
-      const newTheme = currentTheme === 'white' ? 'dark' : 'white';
-      applyTheme(newTheme);
+    if (btnSettingsToggle) btnSettingsToggle.addEventListener('click', openSettings);
+    if (linkOpenSettings) linkOpenSettings.addEventListener('click', (e) => { e.preventDefault(); openSettings(); });
+    if (btnCloseSettings) btnCloseSettings.addEventListener('click', closeSettings);
+
+    // Settings Tabs
+    const setTabs = document.querySelectorAll('.set-tab');
+    const setPanes = document.querySelectorAll('.set-pane');
+
+    setTabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        setTabs.forEach(t => t.classList.remove('active'));
+        setPanes.forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        const targetId = tab.getAttribute('data-settab');
+        const pane = document.getElementById(targetId);
+        if (pane) pane.classList.add('active');
+      });
     });
-  }
 
-  if (themeSelect) {
-    themeSelect.addEventListener('change', (e) => {
-      playHapticClick();
-      applyTheme(e.target.value);
-    });
-  }
-});
+    // Theme Switcher
+    const themeSelect = document.getElementById('themeSelect');
+    if (themeSelect) {
+      themeSelect.addEventListener('change', (e) => {
+        if (e.target.value === 'dark') {
+          document.body.classList.remove('white-mode');
+          document.body.classList.add('dark-mode');
+        } else {
+          document.body.classList.remove('dark-mode');
+          document.body.classList.add('white-mode');
+        }
+      });
+    }
+
+    // Audio Mute Quick Toggle in Topbar
+    const btnSoundToggle = document.getElementById('btnSoundToggle');
+    const soundToggle = document.getElementById('soundEffectsToggle');
+    if (btnSoundToggle && soundToggle) {
+      btnSoundToggle.addEventListener('click', () => {
+        soundToggle.checked = !soundToggle.checked;
+        playChimeSound(600, 0.1);
+      });
+    }
+
+    // Weather Fetcher
+    async function fetchWeather(city = '') {
+      try {
+        await fetch(`/api/weather?city=${encodeURIComponent(city)}`);
+      } catch (_) {}
+    }
+    fetchWeather();
+
+    const btnUpdateCity = document.getElementById('btnUpdateCity');
+    const cityInput = document.getElementById('cityWeatherInput');
+    if (btnUpdateCity && cityInput) {
+      btnUpdateCity.addEventListener('click', () => fetchWeather(cityInput.value.trim()));
+    }
+
+    // Save API key
+    const btnSaveKey = document.getElementById('btnSaveKey');
+    const apiKeyInput = document.getElementById('apiKeyInput');
+    const keyStatusMsg = document.getElementById('keyStatusMsg');
+    if (btnSaveKey && apiKeyInput) {
+      // Check if server already has key
+      fetch('/api/config')
+        .then(r => r.json())
+        .then(cfg => {
+          if (cfg.hasApiKey && cfg.maskedKey) {
+            apiKeyInput.placeholder = `Active (${cfg.maskedKey})`;
+          }
+        })
+        .catch(() => {});
+
+      btnSaveKey.addEventListener('click', async () => {
+        const keyVal = apiKeyInput.value.trim();
+        if (!keyVal) return;
+        try {
+          const res = await fetch('/api/config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ apiKey: keyVal })
+          });
+          if (res.ok && keyStatusMsg) {
+            localStorage.setItem('loly_gemini_api_key', keyVal);
+            keyStatusMsg.textContent = 'Key saved successfully!';
+            setTimeout(() => keyStatusMsg.textContent = '', 3000);
+            loadAvailableModels(true);
+          }
+        } catch (_) {}
+      });
+    }
+
+    // =========================================================================
+    // 9. AUTOMATIC SSE AGENT STREAM & SLIDE APPROVALS
+    // =========================================================================
+
+    const agentNameLabel = document.getElementById('agentNameLabel');
+    const pillAgentName = document.getElementById('pillAgentName');
+    const pillStatusBadge = document.getElementById('pillStatusBadge');
+    const tickerText = document.getElementById('tickerText');
+    const homeAgentName = document.getElementById('homeAgentName');
+    const homeStatusLabel = document.getElementById('homeStatusLabel');
+    const approvalSlideBar = document.getElementById('approvalSlideBar');
+    const approvalCmdPreview = document.getElementById('approvalCmdPreview');
+    const pillQuickActions = document.getElementById('pillQuickActions');
+
+    let currentPendingApproval = null;
+
+    function handleAgentStatus(data) {
+      const name = data.name || 'agent';
+      if (agentNameLabel) agentNameLabel.textContent = name;
+      if (pillAgentName) pillAgentName.textContent = name;
+      if (homeAgentName) homeAgentName.textContent = name;
+
+      const status = data.status || 'idle';
+      if (pillStatusBadge) pillStatusBadge.textContent = status;
+      if (homeStatusLabel) homeStatusLabel.textContent = status.toUpperCase();
+      if (data.tickerText && tickerText) tickerText.textContent = data.tickerText;
+
+      // AUTOMATIC MASCOT REACTION BASED ON AGENT STATE
+      if (status === 'working') {
+        loly.setExpression('working');
+      } else if (status === 'waiting_approval') {
+        loly.setExpression('curious');
+      } else if (status === 'success') {
+        loly.setExpression('happy');
+        loly.triggerBounce();
+        playChimeSound(880, 0.25);
+      } else if (status === 'error') {
+        loly.setExpression('surprised');
+      } else {
+        loly.setExpression('neutral');
+      }
+    }
+
+    function showApproval(appr) {
+      currentPendingApproval = appr;
+      loly.setExpression('curious');
+      playChimeSound(660, 0.2);
+
+      if (approvalSlideBar && approvalCmdPreview) {
+        approvalSlideBar.style.display = 'flex';
+        approvalCmdPreview.textContent = `${appr.actionType}: ${appr.target || ''}`;
+      }
+      if (pillQuickActions) pillQuickActions.style.display = 'flex';
+    }
+
+    function clearApproval() {
+      currentPendingApproval = null;
+      if (approvalSlideBar) approvalSlideBar.style.display = 'none';
+      if (pillQuickActions) pillQuickActions.style.display = 'none';
+    }
+
+    async function sendDecision(id, decision) {
+      try {
+        await fetch('/api/approve', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, decision })
+        });
+        clearApproval();
+        loly.setExpression('happy');
+        loly.triggerBounce();
+      } catch (_) {}
+    }
+
+    const btnSlideAllow = document.getElementById('btnSlideAllow');
+    const btnSlideDeny = document.getElementById('btnSlideDeny');
+    const quickAllow = document.getElementById('quickAllowBtn');
+    const quickDeny = document.getElementById('quickDenyBtn');
+
+    if (btnSlideAllow) btnSlideAllow.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'allow'));
+    if (btnSlideDeny) btnSlideDeny.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'deny'));
+    if (quickAllow) quickAllow.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'allow'));
+    if (quickDeny) quickDeny.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'deny'));
+
+    // Hook simulator buttons
+    const simBash = document.getElementById('simBashApproval');
+    if (simBash) {
+      simBash.addEventListener('click', () => {
+        closeSettings();
+        showApproval({
+          id: `sim-${Date.now()}`,
+          actionType: 'bash_command',
+          target: 'npm test -- --coverage'
+        });
+      });
+    }
+
+    const simEdit = document.getElementById('simFileEdit');
+    if (simEdit) {
+      simEdit.addEventListener('click', () => {
+        closeSettings();
+        showApproval({
+          id: `sim-${Date.now()}`,
+          actionType: 'file_edit',
+          target: 'server.js (+18 -4)'
+        });
+      });
+    }
+
+    const simFinished = document.getElementById('simFinished');
+    if (simFinished) {
+      simFinished.addEventListener('click', () => {
+        closeSettings();
+        handleAgentStatus({ name: 'gemini-cli', status: 'success', tickerText: 'All tasks completed successfully!' });
+      });
+    }
+
+    // Connect SSE
+    function connectSse() {
+      const sse = new EventSource('/api/events');
+      sse.addEventListener('init', (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.agent) handleAgentStatus(d.agent);
+          if (Array.isArray(d.pendingApprovals) && d.pendingApprovals.length) {
+            showApproval(d.pendingApprovals[0]);
+          }
+          if (d.stats) updateStatsDisplay(d.stats);
+        } catch (_) {}
+      });
+
+      sse.addEventListener('agent_status', (e) => {
+        try { handleAgentStatus(JSON.parse(e.data)); } catch (_) {}
+      });
+
+      sse.addEventListener('agent_activity', (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          loly.setExpression('working');
+          if (d.stats) updateStatsDisplay(d.stats);
+        } catch (_) {}
+      });
+
+      sse.addEventListener('approval_request', (e) => {
+        try { showApproval(JSON.parse(e.data)); } catch (_) {}
+      });
+
+      sse.addEventListener('approval_resolved', () => clearApproval());
+
+      sse.addEventListener('model_changed', (e) => {
+        try {
+          const d = JSON.parse(e.data);
+          if (d.model && chatModelSelect) {
+            chatModelSelect.value = d.model;
+            localStorage.setItem('loly_active_model', d.model);
+          }
+        } catch (_) {}
+      });
+    }
+    connectSse();
+
+    function updateStatsDisplay(stats) {
+      if (!stats) return;
+      const s1 = document.getElementById('statSessions');
+      const s2 = document.getElementById('statEvents');
+      const s3 = document.getElementById('statApprovals');
+      if (s1 && stats.sessions !== undefined) s1.textContent = stats.sessions;
+      if (s2 && stats.events !== undefined) s2.textContent = stats.events;
+      if (s3 && stats.approvals !== undefined) s3.textContent = stats.approvals;
+    }
+  });
+
+})();

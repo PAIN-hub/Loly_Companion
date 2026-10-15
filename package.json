@@ -2,6 +2,14 @@
   "name": "loly",
   "version": "1.0.0",
   "description": "A desktop companion for Windows & Linux keeping an eye on AI coding agents with Gemini API integration",
+  "homepage": "https://pain-hub.github.io/Loly_Companion/",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/PAIN-hub/Loly_Companion.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PAIN-hub/Loly_Companion/issues"
+  },
   "main": "main.js",
   "type": "module",
   "scripts": {
@@ -10,9 +18,10 @@
     "desktop": "google-chrome --app=http://127.0.0.1:4141 --window-size=860,640 --window-position=530,20",
     "electron": "electron .",
     "app:linux": "./dist/linux-unpacked/loly",
-    "dist": "electron-builder && node scripts/fix-appimage.js",
-    "dist:linux": "electron-builder --linux AppImage && node scripts/fix-appimage.js",
-    "dist:win": "electron-builder --win nsis portable"
+    "dist": "electron-builder --linux AppImage deb && node scripts/fix-appimage.js",
+    "dist:linux": "electron-builder --linux AppImage deb && node scripts/fix-appimage.js",
+    "dist:win": "electron-builder --win portable nsis",
+    "dist:all": "electron-builder --linux AppImage deb --win portable nsis && node scripts/fix-appimage.js"
   },
   "build": {
     "appId": "com.loly.app",
@@ -32,10 +41,12 @@
     ],
     "linux": {
       "target": [
-        "AppImage"
+        "AppImage",
+        "deb"
       ],
       "icon": "public/icon.png",
-      "category": "Development"
+      "category": "Development",
+      "maintainer": "Loly Companion <loly@companion.ai>"
     },
     "win": {
       "target": [
@@ -52,7 +63,7 @@
     "coucou",
     "companion"
   ],
-  "author": "",
+  "author": "Loly Companion <loly@companion.ai>",
   "license": "MIT",
   "devDependencies": {
     "electron": "^44.7.2",

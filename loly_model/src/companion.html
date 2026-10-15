@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loly - Desktop Companion</title>
+  <link rel="stylesheet" href="../assets/loly/loly.css">
+  <link rel="stylesheet" href="companion.css">
+</head>
+<body class="companion-body">
+  <div class="companion-frame" id="companion-frame">
+    
+    <!-- Drag Handle & Window Controls -->
+    <div class="window-titlebar" id="window-titlebar">
+      <div class="drag-grip" title="Drag Loly anywhere on your desktop">
+        <span></span><span></span><span></span>
+      </div>
+      <div class="window-controls no-drag">
+        <button type="button" class="win-btn" id="btn-minimize" title="Minimize">&minus;</button>
+        <button type="button" class="win-btn" id="btn-close" title="Close">&times;</button>
+      </div>
+    </div>
+
+    <!-- Main Character Container -->
+    <div class="mascot-stage" id="mascot-stage">
+      <div id="loly-container" class="loly-container">
+        <!-- Inlined Loly SVG Component -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" width="100%" height="100%" id="loly-svg" class="loly-svg" role="img" aria-label="Loly anime desktop companion">
+          <defs>
+            <linearGradient id="loly-hair-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#f1f2f5" />
+              <stop offset="65%" stop-color="#d8dce3" />
+              <stop offset="85%" stop-color="#b1deda" />
+              <stop offset="100%" stop-color="#6ee7b7" />
+            </linearGradient>
+
+            <linearGradient id="loly-hair-accent" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#cfd5df" />
+              <stop offset="70%" stop-color="#93e2d5" />
+              <stop offset="100%" stop-color="#38bdf8" />
+            </linearGradient>
+
+            <linearGradient id="loly-hair-front-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#f8f9fa" />
+              <stop offset="60%" stop-color="#e2e5eb" />
+              <stop offset="100%" stop-color="#cbd2dd" />
+            </linearGradient>
+
+            <radialGradient id="loly-iris-grad" cx="50%" cy="65%" r="65%">
+              <stop offset="0%" stop-color="#a7f3d0" />
+              <stop offset="35%" stop-color="#2dd4bf" />
+              <stop offset="70%" stop-color="#0d9488" />
+              <stop offset="95%" stop-color="#0f383e" />
+              <stop offset="100%" stop-color="#082025" />
+            </radialGradient>
+
+            <linearGradient id="loly-eye-shadow" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="rgba(15, 35, 55, 0.28)" />
+              <stop offset="60%" stop-color="rgba(15, 35, 55, 0.05)" />
+              <stop offset="100%" stop-color="transparent" />
+            </linearGradient>
+
+            <linearGradient id="loly-skin-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#fff8f5" />
+              <stop offset="75%" stop-color="#fff2ed" />
+              <stop offset="100%" stop-color="#fedfd5" />
+            </linearGradient>
+
+            <radialGradient id="loly-blush-grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="rgba(251, 113, 133, 0.45)" />
+              <stop offset="60%" stop-color="rgba(251, 113, 133, 0.2)" />
+              <stop offset="100%" stop-color="rgba(251, 113, 133, 0)" />
+            </radialGradient>
+
+            <linearGradient id="loly-hoodie-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="#34373e" />
+              <stop offset="35%" stop-color="#26282e" />
+              <stop offset="100%" stop-color="#1b1c20" />
+            </linearGradient>
+
+            <radialGradient id="loly-emblem-glow" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#67e8f9" />
+              <stop offset="50%" stop-color="#06b6d4" />
+              <stop offset="100%" stop-color="rgba(6, 182, 212, 0)" />
+            </radialGradient>
+
+            <clipPath id="loly-eye-left-clip">
+              <path d="M 140 183 C 143 162 173 161 182 181 C 184 195 174 207 159 207 C 144 207 138 196 140 183 Z" />
+            </clipPath>
+
+            <clipPath id="loly-eye-right-clip">
+              <path d="M 218 181 C 227 161 257 162 260 183 C 262 196 256 207 241 207 C 226 207 216 195 218 181 Z" />
+            </clipPath>
+          </defs>
+
+          <!-- Sparkles -->
+          <g id="loly-sparkles" class="accessories-sparkles">
+            <path id="sparkle-tl" class="sparkle sparkle-1" d="M 85 90 Q 95 105 85 120 Q 75 105 85 90 Z M 70 105 Q 85 95 100 105 Q 85 115 70 105 Z" fill="#fed7aa" opacity="0.85" />
+            <path id="sparkle-ml" class="sparkle sparkle-2" d="M 95 205 Q 105 220 95 235 Q 85 220 95 205 Z M 80 220 Q 95 210 110 220 Q 95 230 80 220 Z" fill="#fed7aa" opacity="0.9" />
+            <path id="sparkle-tr" class="sparkle sparkle-3" d="M 315 90 Q 325 105 315 120 Q 305 105 315 90 Z M 300 105 Q 315 95 330 105 Q 315 115 300 105 Z" fill="#fed7aa" opacity="0.85" />
+            <path id="sparkle-mr" class="sparkle sparkle-4" d="M 325 215 Q 335 230 325 245 Q 315 230 325 215 Z M 310 230 Q 325 220 340 230 Q 325 240 310 230 Z" fill="#fed7aa" opacity="0.9" />
+            <circle cx="108" cy="145" r="2.5" fill="#fef08a" opacity="0.8" class="sparkle-dot sparkle-dot-1" />
+            <circle cx="295" cy="165" r="2.5" fill="#fef08a" opacity="0.8" class="sparkle-dot sparkle-dot-2" />
+          </g>
+
+          <!-- Character Master Group -->
+          <g id="loly-character" class="loly-character">
+            <g id="loly-shadow" class="shadow">
+              <ellipse cx="200" cy="495" rx="75" ry="12" fill="rgba(15, 23, 42, 0.18)" />
+              <ellipse cx="200" cy="495" rx="45" ry="7" fill="rgba(15, 23, 42, 0.12)" />
+            </g>
+
+            <!-- Hair Back -->
+            <g id="loly-hair-back" class="hair-back">
+              <path d="M 120 160 C 90 220 75 320 85 410 C 95 440 120 450 145 425 C 135 390 140 330 145 280 C 145 280 255 280 255 280 C 260 330 265 390 255 425 C 280 450 305 440 315 410 C 325 320 310 220 280 160 Z" fill="#a4abb8" />
+              <path d="M 130 140 C 90 190 60 250 55 330 C 50 375 62 420 85 445 C 95 435 98 410 95 385 C 80 405 70 425 60 410 C 65 370 78 315 105 270 C 115 315 110 370 125 425 C 135 435 145 430 150 415 C 135 370 135 320 142 270 C 148 230 145 190 140 160 Z" fill="url(#loly-hair-gradient)" stroke="#8e96a4" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M 60 380 C 50 420 70 450 90 460 C 105 465 115 445 105 425 C 95 405 85 390 80 375 Z" fill="#38bdf8" opacity="0.9" />
+              <path d="M 85 410 C 80 445 95 468 120 472 C 135 470 140 455 130 435 C 118 415 110 395 105 380 Z" fill="#6ee7b7" opacity="0.95" />
+              <path d="M 270 140 C 310 190 340 250 345 330 C 350 375 338 420 315 445 C 305 435 302 410 305 385 C 320 405 330 425 340 410 C 335 370 322 315 295 270 C 285 315 290 370 275 425 C 265 435 255 430 250 415 C 265 370 265 320 258 270 C 252 230 255 190 260 160 Z" fill="url(#loly-hair-gradient)" stroke="#8e96a4" stroke-width="1.2" stroke-linejoin="round" />
+              <path d="M 340 380 C 350 420 330 450 310 460 C 295 465 285 445 295 425 C 305 405 315 390 320 375 Z" fill="#38bdf8" opacity="0.9" />
+              <path d="M 315 410 C 320 445 305 468 280 472 C 265 470 260 455 270 435 C 282 415 290 395 295 380 Z" fill="#6ee7b7" opacity="0.95" />
+              <g id="loly-bow-left" class="hair-bow">
+                <path d="M 132 208 C 122 202 118 212 125 218 C 118 222 124 232 133 226 C 136 220 136 214 132 208 Z" fill="#23262e" />
+                <circle cx="132" cy="216" r="3" fill="#18191e" />
+              </g>
+              <g id="loly-bow-right" class="hair-bow">
+                <path d="M 268 208 C 278 202 282 212 275 218 C 282 222 276 232 267 226 C 264 220 264 214 268 208 Z" fill="#23262e" />
+                <circle cx="268" cy="216" r="3" fill="#18191e" />
+              </g>
+            </g>
+
+            <!-- Body & Legs -->
+            <g id="loly-body" class="body">
+              <g id="loly-legs" class="legs">
+                <path d="M 160 420 L 157 485 C 157 493 175 493 176 485 L 180 420 Z" fill="url(#loly-skin-grad)" stroke="#e4a89b" stroke-width="1.2" />
+                <ellipse cx="168" cy="460" rx="6" ry="3.5" fill="#fed7cc" opacity="0.75" />
+                <path d="M 164 458 Q 168 461 172 458" stroke="#fca5a5" stroke-width="1" fill="none" stroke-linecap="round" />
+                <path d="M 220 420 L 224 485 C 224 493 242 493 243 485 L 240 420 Z" fill="url(#loly-skin-grad)" stroke="#e4a89b" stroke-width="1.2" />
+                <ellipse cx="232" cy="460" rx="6" ry="3.5" fill="#fed7cc" opacity="0.75" />
+                <path d="M 228 458 Q 232 461 236 458" stroke="#fca5a5" stroke-width="1" fill="none" stroke-linecap="round" />
+              </g>
+              <g id="loly-shorts" class="shorts">
+                <path d="M 148 405 L 148 426 C 148 434 195 435 198 424 L 202 424 C 205 435 252 434 252 426 L 252 405 Z" fill="#e2e8f0" stroke="#94a3b8" stroke-width="1.2" />
+                <path d="M 148 423 Q 173 429 198 421" stroke="#cbd5e1" stroke-width="2.5" fill="none" />
+                <path d="M 202 421 Q 227 429 252 423" stroke="#cbd5e1" stroke-width="2.5" fill="none" />
+                <path d="M 200 410 L 200 423" stroke="#94a3b8" stroke-width="1" />
+              </g>
+            </g>
+
+            <!-- Hoodie -->
+            <g id="loly-hoodie" class="hoodie">
+              <path id="hoodie-torso" d="M 145 270 C 130 285 125 315 125 380 C 125 408 135 415 150 416 L 250 416 C 265 415 275 408 275 380 C 275 315 270 285 255 270 C 235 285 165 285 145 270 Z" fill="url(#loly-hoodie-grad)" stroke="#1a1b1f" stroke-width="1.5" />
+              <path d="M 140 310 C 160 350 160 380 152 414" stroke="#18191d" stroke-width="2.5" fill="none" stroke-linecap="round" />
+              <path d="M 260 310 C 240 350 240 380 248 414" stroke="#18191d" stroke-width="2.5" fill="none" stroke-linecap="round" />
+              <path d="M 185 365 Q 200 375 215 365" stroke="#18191d" stroke-width="2" fill="none" stroke-linecap="round" />
+
+              <!-- Left Sleeve -->
+              <g id="loly-sleeve-left" class="sleeve-left">
+                <path d="M 148 268 C 125 275 95 305 85 360 C 80 395 90 425 105 432 C 122 436 138 428 142 405 C 145 375 140 340 148 305 Z" fill="url(#loly-hoodie-grad)" stroke="#18191d" stroke-width="1.5" stroke-linejoin="round" />
+                <path d="M 98 355 C 105 375 120 385 138 385" stroke="#151619" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                <path d="M 92 385 C 98 402 112 410 128 408" stroke="#151619" stroke-width="2" fill="none" stroke-linecap="round" />
+                <path d="M 98 420 L 138 412 C 140 422 135 430 125 433 L 102 431 C 97 428 96 424 98 420 Z" fill="#2d3037" stroke="#18191d" stroke-width="1.2" />
+                <path d="M 100 423 L 135 415" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+                <path d="M 102 427 L 130 420" stroke="#f1f5f9" stroke-width="2" stroke-linecap="round" />
+              </g>
+
+              <!-- Right Sleeve -->
+              <g id="loly-sleeve-right" class="sleeve-right">
+                <path d="M 252 268 C 275 275 305 305 315 360 C 320 395 310 425 295 432 C 278 436 262 428 258 405 C 255 375 260 340 252 305 Z" fill="url(#loly-hoodie-grad)" stroke="#18191d" stroke-width="1.5" stroke-linejoin="round" />
+                <path d="M 302 355 C 295 375 280 385 262 385" stroke="#151619" stroke-width="2.5" fill="none" stroke-linecap="round" />
+                <path d="M 308 385 C 302 402 288 410 272 408" stroke="#151619" stroke-width="2" fill="none" stroke-linecap="round" />
+                <path d="M 302 420 L 262 412 C 260 422 265 430 275 433 L 298 431 C 303 428 304 424 302 420 Z" fill="#2d3037" stroke="#18191d" stroke-width="1.2" />
+                <path d="M 300 423 L 265 415" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" />
+                <path d="M 298 427 L 270 420" stroke="#f1f5f9" stroke-width="2" stroke-linecap="round" />
+              </g>
+
+              <!-- Bottom Hem -->
+              <g id="loly-hoodie-hem" class="hoodie-hem">
+                <path d="M 136 398 L 264 398 C 265 412 258 418 248 418 L 152 418 C 142 418 135 412 136 398 Z" fill="#292b31" stroke="#18191d" stroke-width="1.2" />
+                <path d="M 140 405 L 260 405" stroke="#94a3b8" stroke-width="2.5" stroke-linecap="round" />
+                <path d="M 142 412 L 258 412" stroke="#f1f5f9" stroke-width="2.5" stroke-linecap="round" />
+              </g>
+
+              <!-- Glowing Emblem -->
+              <g id="loly-emblem" class="hoodie-emblem" transform="translate(200, 325)">
+                <circle cx="0" cy="0" r="14" fill="url(#loly-emblem-glow)" opacity="0.65" class="emblem-halo" />
+                <polygon points="0,-7 6,0 0,7 -6,0" fill="#22d3ee" stroke="#e0f2fe" stroke-width="1" class="emblem-core" />
+                <circle cx="0" cy="0" r="2" fill="#ffffff" />
+                <line x1="-12" y1="0" x2="-7" y2="0" stroke="#06b6d4" stroke-width="1" stroke-linecap="round" opacity="0.8" />
+                <line x1="7" y1="0" x2="12" y2="0" stroke="#06b6d4" stroke-width="1" stroke-linecap="round" opacity="0.8" />
+              </g>
+            </g>
+
+            <!-- Neck & Choker -->
+            <g id="loly-neck" class="neck">
+              <path d="M 186 230 L 186 262 C 186 268 214 268 214 262 L 214 230 Z" fill="url(#loly-skin-grad)" stroke="#e4a89b" stroke-width="1" />
+              <g id="loly-choker" class="choker">
+                <path d="M 185 244 Q 200 248 215 244 L 215 251 Q 200 255 185 251 Z" fill="#18181b" stroke="#09090b" stroke-width="0.8" />
+                <ellipse cx="200" cy="249" rx="2.5" ry="2" fill="#38bdf8" stroke="#0284c7" stroke-width="0.6" />
+              </g>
+              <path d="M 178 266 Q 192 272 200 268 Q 208 272 222 266" stroke="#fed7cc" stroke-width="1.5" fill="none" stroke-linecap="round" />
+            </g>
+
+            <!-- Head & Face -->
+            <g id="loly-head" class="head">
+              <g id="loly-face-base" class="face">
+                <path id="ear-left" d="M 125 188 C 112 188 114 212 128 210 Z" fill="url(#loly-skin-grad)" stroke="#e4a89b" stroke-width="1" />
+                <path d="M 124 195 C 120 196 120 205 126 204" stroke="#fca5a5" stroke-width="1" fill="none" />
+                <path id="ear-right" d="M 275 188 C 288 188 286 212 272 210 Z" fill="url(#loly-skin-grad)" stroke="#e4a89b" stroke-width="1" />
+                <path d="M 276 195 C 280 196 280 205 274 204" stroke="#fca5a5" stroke-width="1" fill="none" />
+                <path id="face-silhouette" d="M 126 150 C 120 200 132 236 170 252 C 185 258 215 258 230 252 C 268 236 280 200 274 150 C 270 110 130 110 126 150 Z" fill="url(#loly-skin-grad)" stroke="#e4a89b" stroke-width="1.2" />
+
+                <!-- Blush -->
+                <g id="loly-blush" class="face-blush">
+                  <ellipse cx="148" cy="214" rx="15" ry="8" fill="url(#loly-blush-grad)" />
+                  <line x1="142" y1="212" x2="146" y2="217" stroke="#fb7185" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+                  <line x1="147" y1="212" x2="151" y2="217" stroke="#fb7185" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+                  <line x1="152" y1="212" x2="156" y2="217" stroke="#fb7185" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+                  <ellipse cx="252" cy="214" rx="15" ry="8" fill="url(#loly-blush-grad)" />
+                  <line x1="244" y1="212" x2="248" y2="217" stroke="#fb7185" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+                  <line x1="249" y1="212" x2="253" y2="217" stroke="#fb7185" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+                  <line x1="254" y1="212" x2="258" y2="217" stroke="#fb7185" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+                </g>
+                <ellipse cx="200" cy="204" rx="1" ry="1.4" fill="#e2a89c" id="loly-nose" />
+              </g>
+
+              <!-- Mouth -->
+              <g id="loly-mouth-group" class="mouth">
+                <path id="loly-mouth" class="mouth-shape" d="M 196 220 Q 200 222 204 220" stroke="#a86055" stroke-width="1.6" fill="none" stroke-linecap="round" />
+                <path id="loly-mouth-open" class="mouth-open-shape" d="M 194 218 Q 200 228 206 218 Z" fill="#f43f5e" stroke="#9f1239" stroke-width="1" opacity="0" />
+              </g>
+
+              <!-- Eyes -->
+              <g id="loly-eyes" class="eyes">
+                <!-- Left Eye -->
+                <g id="loly-eye-left" class="eye eye-left">
+                  <path d="M 140 183 C 143 162 173 161 182 181 C 184 195 174 207 159 207 C 144 207 138 196 140 183 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="0.8" />
+                  <path d="M 140 183 C 143 162 173 161 182 181 L 182 189 C 173 175 143 175 140 189 Z" fill="url(#loly-eye-shadow)" />
+                  <g clip-path="url(#loly-eye-left-clip)">
+                    <g id="loly-pupil-left" class="pupil-group pupil-left" transform="translate(0, 0)">
+                      <ellipse cx="161" cy="186" rx="16" ry="19" fill="url(#loly-iris-grad)" />
+                      <ellipse cx="161" cy="185" rx="7.5" ry="10" fill="#082025" />
+                      <ellipse cx="161" cy="183" rx="4" ry="6" fill="#030c0e" />
+                      <path d="M 150 192 C 154 202 168 202 172 192 C 168 196 154 196 150 192 Z" fill="#5eead4" opacity="0.85" />
+                      <ellipse cx="161" cy="198" rx="6" ry="2.5" fill="#a7f3d0" opacity="0.75" />
+                      <ellipse cx="154" cy="177" rx="5.5" ry="7" fill="#ffffff" opacity="0.95" />
+                      <circle cx="169" cy="193" r="3" fill="#ffffff" opacity="0.85" />
+                      <circle cx="165" cy="173" r="1.5" fill="#ffffff" opacity="0.9" />
+                      <polygon points="160,188 161,190 163,190 161.5,191.5 162,193.5 160,192 158,193.5 158.5,191.5 157,190 159,190" fill="#ccfbf1" opacity="0.8" />
+                    </g>
+                  </g>
+                  <path id="eyelash-upper-left" class="eyelash-upper" d="M 134 186 C 142 162 174 161 187 178 C 189 181 185 183 182 181 C 171 168 145 168 138 184 C 137 186 134 187 134 186 Z" fill="#1e2229" />
+                  <path d="M 183 175 C 188 172 192 175 194 179 C 190 181 186 179 183 175 Z" fill="#1e2229" />
+                  <path id="eyelid-fold-left" class="eyelid-fold" d="M 144 162 Q 162 156 178 165" stroke="#d49b8e" stroke-width="1.2" fill="none" stroke-linecap="round" />
+                  <path d="M 148 205 Q 160 208 172 205" stroke="#242831" stroke-width="1.2" fill="none" stroke-linecap="round" />
+                </g>
+
+                <!-- Right Eye -->
+                <g id="loly-eye-right" class="eye eye-right">
+                  <path d="M 218 181 C 227 161 257 162 260 183 C 262 196 256 207 241 207 C 226 207 216 195 218 181 Z" fill="#ffffff" stroke="#e2e8f0" stroke-width="0.8" />
+                  <path d="M 218 181 C 227 161 257 162 260 183 L 260 189 C 257 175 227 175 218 189 Z" fill="url(#loly-eye-shadow)" />
+                  <g clip-path="url(#loly-eye-right-clip)">
+                    <g id="loly-pupil-right" class="pupil-group pupil-right" transform="translate(0, 0)">
+                      <ellipse cx="239" cy="186" rx="16" ry="19" fill="url(#loly-iris-grad)" />
+                      <ellipse cx="239" cy="185" rx="7.5" ry="10" fill="#082025" />
+                      <ellipse cx="239" cy="183" rx="4" ry="6" fill="#030c0e" />
+                      <path d="M 228 192 C 232 202 246 202 250 192 C 246 196 232 196 228 192 Z" fill="#5eead4" opacity="0.85" />
+                      <ellipse cx="239" cy="198" rx="6" ry="2.5" fill="#a7f3d0" opacity="0.75" />
+                      <ellipse cx="232" cy="177" rx="5.5" ry="7" fill="#ffffff" opacity="0.95" />
+                      <circle cx="247" cy="193" r="3" fill="#ffffff" opacity="0.85" />
+                      <circle cx="243" cy="173" r="1.5" fill="#ffffff" opacity="0.9" />
+                      <polygon points="238,188 239,190 241,190 239.5,191.5 240,193.5 238,192 236,193.5 236.5,191.5 235,190 237,190" fill="#ccfbf1" opacity="0.8" />
+                    </g>
+                  </g>
+                  <path id="eyelash-upper-right" class="eyelash-upper" d="M 213 178 C 226 161 258 162 266 186 C 266 187 263 186 262 184 C 255 168 229 168 218 181 C 215 183 211 181 213 178 Z" fill="#1e2229" />
+                  <path d="M 264 179 C 266 175 270 172 275 175 C 272 179 268 181 264 179 Z" fill="#1e2229" />
+                  <path id="eyelid-fold-right" class="eyelid-fold" d="M 222 165 Q 238 156 256 162" stroke="#d49b8e" stroke-width="1.2" fill="none" stroke-linecap="round" />
+                  <path d="M 228 205 Q 240 208 252 205" stroke="#242831" stroke-width="1.2" fill="none" stroke-linecap="round" />
+                </g>
+              </g>
+
+              <!-- Eyebrows -->
+              <g id="loly-eyebrows" class="eyebrows">
+                <path id="loly-eyebrow-left" class="eyebrow eyebrow-left" d="M 140 152 Q 158 143 176 150" stroke="#788190" stroke-width="2.6" fill="none" stroke-linecap="round" />
+                <path id="loly-eyebrow-right" class="eyebrow eyebrow-right" d="M 224 150 Q 242 143 260 152" stroke="#788190" stroke-width="2.6" fill="none" stroke-linecap="round" />
+              </g>
+
+              <!-- Front Hair -->
+              <g id="loly-hair-front" class="hair-front">
+                <path d="M 138 135 C 150 145 250 145 262 135 C 255 155 145 155 138 135 Z" fill="rgba(148, 163, 184, 0.22)" />
+                <path d="M 160 95 C 160 125 150 145 148 160 C 158 152 165 140 168 125 C 172 142 180 152 188 155 C 190 142 192 125 188 105 Z" fill="url(#loly-hair-front-grad)" stroke="#a1a8b6" stroke-width="1" stroke-linejoin="round" />
+                <path d="M 185 95 C 188 120 188 145 190 160 C 198 154 205 148 208 132 C 212 148 220 158 226 160 C 226 145 228 125 225 95 Z" fill="url(#loly-hair-front-grad)" stroke="#a1a8b6" stroke-width="1" stroke-linejoin="round" />
+                <path d="M 140 100 C 122 130 115 170 120 215 C 124 235 134 250 138 238 C 132 215 130 185 138 150 C 132 170 134 195 142 210 C 145 195 146 175 148 150 Z" fill="url(#loly-hair-gradient)" stroke="#a1a8b6" stroke-width="1" stroke-linejoin="round" />
+                <path d="M 260 100 C 278 130 285 170 280 215 C 276 235 266 250 262 238 C 268 215 270 185 262 150 C 268 170 266 195 258 210 C 255 195 254 175 252 150 Z" fill="url(#loly-hair-gradient)" stroke="#a1a8b6" stroke-width="1" stroke-linejoin="round" />
+                <path d="M 132 140 C 125 90 160 50 200 48 C 240 50 275 90 268 140 C 278 120 270 80 245 60 C 220 45 180 45 155 60 C 130 80 122 120 132 140 Z" fill="url(#loly-hair-front-grad)" stroke="#a1a8b6" stroke-width="1" />
+                <g id="loly-hair-halo" opacity="0.75">
+                  <ellipse cx="192" cy="85" rx="14" ry="5" fill="#ffffff" />
+                  <ellipse cx="170" cy="90" rx="9" ry="3.5" fill="#ffffff" />
+                  <ellipse cx="218" cy="88" rx="10" ry="4" fill="#ffffff" />
+                </g>
+                <g id="loly-ahoge" class="ahoge">
+                  <path d="M 188 56 C 185 30 155 18 142 35 C 132 48 146 62 154 52 C 160 44 170 38 182 52 Z" fill="url(#loly-hair-front-grad)" stroke="#8e96a4" stroke-width="1.2" stroke-linejoin="round" />
+                </g>
+              </g>
+            </g>
+
+            <!-- Accessories & Emotes -->
+            <g id="loly-accessories" class="accessories">
+              <!-- Expression FX: Anime Thinking Thought Bubble with Glowing Idea Bulb -->
+              <g id="fx-thinking" class="emote-fx emote-thinking" transform="translate(280, 70)" style="display: none; opacity: 0;">
+                <circle cx="-35" cy="55" r="3.5" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" class="thought-bubble-1" />
+                <circle cx="-24" cy="38" r="5.5" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" class="thought-bubble-2" />
+                <circle cx="-10" cy="22" r="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.2" class="thought-bubble-3" />
+                <g class="thought-cloud-body">
+                  <ellipse cx="6" cy="0" rx="28" ry="20" fill="#ffffff" stroke="#64748b" stroke-width="1.5" />
+                  <circle cx="-10" cy="-8" r="14" fill="#ffffff" />
+                  <circle cx="16" cy="-8" r="16" fill="#ffffff" />
+                  <circle cx="22" cy="5" r="12" fill="#ffffff" />
+                  <circle cx="-14" cy="5" r="11" fill="#ffffff" />
+                  <circle cx="4" cy="11" r="12" fill="#ffffff" />
+                </g>
+                <g class="thought-bulb" transform="translate(6, 0)">
+                  <circle cx="0" cy="-4" r="14" fill="#fef08a" opacity="0.65" class="bulb-halo" />
+                  <path d="M -7 -4 C -7 -11 7 -11 7 -4 C 7 0 3 3 3 6 L -3 6 C -3 3 -7 0 -7 -4 Z" fill="#fde047" stroke="#ca8a04" stroke-width="1.2" />
+                  <path d="M -3 6 L 3 6 L 2 9 L -2 9 Z" fill="#94a3b8" stroke="#64748b" stroke-width="0.8" />
+                  <line x1="0" y1="-17" x2="0" y2="-13" stroke="#eab308" stroke-width="1.8" stroke-linecap="round" />
+                  <line x1="-12" y1="-12" x2="-9" y2="-9" stroke="#eab308" stroke-width="1.8" stroke-linecap="round" />
+                  <line x1="12" y1="-12" x2="9" y2="-9" stroke="#eab308" stroke-width="1.8" stroke-linecap="round" />
+                  <line x1="-15" y1="-4" x2="-11" y2="-4" stroke="#eab308" stroke-width="1.8" stroke-linecap="round" />
+                  <line x1="15" y1="-4" x2="11" y2="-4" stroke="#eab308" stroke-width="1.8" stroke-linecap="round" />
+                </g>
+              </g>
+
+              <g id="fx-curious" class="emote-fx emote-curious" transform="translate(265, 95)" style="display: none; opacity: 0;">
+                <circle cx="0" cy="0" r="12" fill="#e0f2fe" stroke="#0284c7" stroke-width="1.5" />
+                <text x="0" y="5" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="bold" fill="#0369a1" text-anchor="middle">?</text>
+              </g>
+
+              <g id="fx-surprised" class="emote-fx emote-surprised" transform="translate(265, 100)" style="display: none; opacity: 0;">
+                <path d="M 0 -8 C 5 0 6 6 0 10 C -6 6 -5 0 0 -8 Z" fill="#38bdf8" stroke="#0284c7" stroke-width="1.2" />
+                <ellipse cx="-1.5" cy="4" rx="1.5" ry="3" fill="#ffffff" opacity="0.8" />
+              </g>
+
+              <g id="fx-sleepy" class="emote-fx emote-sleepy" transform="translate(265, 100)" style="display: none; opacity: 0;">
+                <text x="0" y="0" font-family="'Segoe UI', Roboto, sans-serif" font-size="16" font-weight="900" fill="#38bdf8" class="zzz-1">Z</text>
+                <text x="12" y="-14" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="900" fill="#818cf8" class="zzz-2">z</text>
+                <text x="22" y="-26" font-family="'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="900" fill="#c084fc" class="zzz-3">z</text>
+              </g>
+
+              <g id="fx-working" class="emote-fx emote-working" style="display: none; opacity: 0;">
+                <rect x="135" y="170" width="130" height="32" rx="4" fill="rgba(6, 182, 212, 0.12)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="4 2" />
+                <text x="142" y="184" font-family="monospace" font-size="7" fill="#67e8f9" font-weight="bold">&lt;LOLY_DEV /&gt;</text>
+                <text x="142" y="194" font-family="monospace" font-size="6.5" fill="#a5f3fc">&gt; status: 200 OK</text>
+                <circle cx="256" cy="186" r="3" fill="#22d3ee" class="hud-pulse" />
+              </g>
+            </g>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Quick Floating Action Bar for Desktop Companion -->
+    <div class="quick-action-bar no-drag" id="quick-action-bar">
+      <button type="button" class="action-chip active" data-expr="neutral">Idle</button>
+      <button type="button" class="action-chip" data-expr="happy">Happy</button>
+      <button type="button" class="action-chip" data-expr="working">Dev</button>
+      <button type="button" class="action-chip" data-expr="sleepy">Sleep</button>
+    </div>
+
+  </div>
+
+  <script src="../assets/loly/loly.js"></script>
+  <script src="companion.js"></script>
+</body>
+</html>

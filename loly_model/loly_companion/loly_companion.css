@@ -1,0 +1,532 @@
+/**
+ * Pitch Black OLED Dynamic Island - Loly Coding Companion
+ * Optimized for OLED displays (#000000) with Linux-friendly fluid expansion
+ */
+
+:root {
+  --oled-black: #000000;
+  --oled-surface: #07080a;
+  --oled-surface-card: #0e1014;
+  --oled-border: rgba(255, 255, 255, 0.12);
+  --oled-border-glow: rgba(6, 182, 212, 0.35);
+  --cyan-neon: #00f2fe;
+  --cyan-dim: #0891b2;
+  --text-white: #ffffff;
+  --text-subtle: #94a3b8;
+  --text-muted: #64748b;
+  --spring-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --bounce-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Base resets */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "JetBrains Mono", sans-serif;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Master Island Viewport Anchor */
+.island-viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8px;
+  background: transparent;
+}
+
+/* ==========================================================================
+   PITCH BLACK OLED DYNAMIC ISLAND CONTAINER
+   ========================================================================== */
+.oled-island {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--oled-black);
+  border: 1px solid var(--oled-border);
+  box-shadow: 
+    0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 16px 48px rgba(0, 0, 0, 0.95),
+    0 0 24px rgba(6, 182, 212, 0.12);
+  color: var(--text-white);
+  overflow: hidden;
+  will-change: width, height, border-radius, box-shadow;
+  transition: 
+    width 0.42s var(--spring-ease),
+    height 0.42s var(--spring-ease),
+    border-radius 0.42s var(--spring-ease),
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+  z-index: 100;
+}
+
+/* Glowing active perimeter on hover/focus */
+.oled-island:hover {
+  border-color: rgba(6, 182, 212, 0.4);
+  box-shadow: 
+    0 0 0 1px rgba(6, 182, 212, 0.25),
+    0 20px 56px rgba(0, 0, 0, 0.98),
+    0 0 32px rgba(6, 182, 212, 0.22);
+}
+
+/* --------------------------------------------------------------------------
+   STATE 1: COLLAPSED PILL (COMPACT DYNAMIC ISLAND)
+   -------------------------------------------------------------------------- */
+.oled-island.is-collapsed {
+  width: 270px;
+  height: 48px;
+  border-radius: 9999px;
+  cursor: pointer;
+  -webkit-app-region: drag;
+}
+
+.island-pill-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 48px;
+  padding: 0 14px 0 8px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+}
+
+.oled-island.is-expanded .island-pill-content {
+  display: none;
+  opacity: 0;
+}
+
+/* Pill Left: Mini Mascot Avatar Badge */
+.pill-avatar-wrap {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #111317;
+  border: 1px solid rgba(34, 211, 238, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
+}
+
+.pill-avatar-mini {
+  width: 36px;
+  height: 36px;
+  margin-top: 4px;
+}
+
+/* Pill Center: Status & Micro Sparkline */
+.pill-center-status {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+}
+
+.pill-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pulse-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: #22d3ee;
+  box-shadow: 0 0 8px #22d3ee;
+  animation: loly-ping-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes loly-ping-pulse {
+  0%, 100% {
+    transform: scale(0.9);
+    opacity: 0.7;
+  }
+  50% {
+    transform: scale(1.25);
+    opacity: 1;
+    box-shadow: 0 0 12px #22d3ee;
+  }
+}
+
+.pill-title {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--text-white);
+}
+
+.pill-meta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
+  font-size: 0.66rem;
+  color: var(--text-subtle);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Pill Right: Expand Cue */
+.pill-expand-cue {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-subtle);
+  transition: all 0.2s ease;
+}
+
+.oled-island:hover .pill-expand-cue {
+  background: rgba(34, 211, 238, 0.2);
+  color: #22d3ee;
+  transform: scale(1.08);
+}
+
+/* --------------------------------------------------------------------------
+   STATE 2: EXPANDED FULL OLED COMPANION ISLAND
+   -------------------------------------------------------------------------- */
+.oled-island.is-expanded {
+  width: 320px;
+  height: 480px;
+  border-radius: 28px;
+  cursor: default;
+}
+
+.island-expanded-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  padding: 12px 14px 14px 14px;
+  opacity: 1;
+  transition: opacity 0.25s ease 0.1s;
+}
+
+.oled-island.is-collapsed .island-expanded-content {
+  display: none;
+  opacity: 0;
+}
+
+/* Expanded Top Bar */
+.island-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  -webkit-app-region: drag;
+  cursor: grab;
+}
+
+.island-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-pill-tag {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #22d3ee;
+  background: rgba(6, 182, 212, 0.12);
+  padding: 2px 8px;
+  border-radius: 9999px;
+  border: 1px solid rgba(6, 182, 212, 0.3);
+}
+
+.window-ctrl-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-subtle);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.icon-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: var(--text-white);
+}
+
+.icon-btn.btn-collapse:hover {
+  background: rgba(34, 211, 238, 0.2);
+  color: #22d3ee;
+}
+
+/* Expanded Mascot Stage */
+.island-mascot-stage {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  padding: 4px 0;
+  -webkit-app-region: no-drag;
+}
+
+.island-mascot-stage .loly-container {
+  width: 220px;
+  height: 286px;
+  cursor: pointer;
+}
+
+/* Expanded Developer Telemetry HUD */
+.island-telemetry {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  background: var(--oled-surface-card);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-bottom: 10px;
+  -webkit-app-region: no-drag;
+}
+
+.telemetry-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.telemetry-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.telemetry-val {
+  font-family: ui-monospace, SFMono-Regular, monospace;
+  font-size: 0.74rem;
+  font-weight: 600;
+  color: var(--text-white);
+}
+
+.telemetry-val.accent {
+  color: #22d3ee;
+}
+
+/* Expanded Quick Action Chips */
+.island-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.island-chip {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-subtle);
+  padding: 6px 4px;
+  border-radius: 9999px;
+  font-size: 0.74rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.15s ease;
+}
+
+.island-chip:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--text-white);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.island-chip.active {
+  background: #22d3ee;
+  color: #000000;
+  border-color: #22d3ee;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.4);
+}
+
+/* ==========================================================================
+   SVG CHARACTER ANIMATIONS (SLEEVES, BREATHING, THINKING, VISOR)
+   ========================================================================== */
+.loly-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+}
+
+.loly-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Natural Head Pivot anchored at neck */
+.head {
+  transform-origin: 200px 242px;
+  transition: transform 0.22s var(--spring-ease);
+  will-change: transform;
+}
+
+/* Sleeves / Hands */
+.sleeve-left {
+  transform-origin: 148px 270px;
+  transition: transform 0.35s var(--bounce-ease);
+  will-change: transform;
+}
+
+.sleeve-right {
+  transform-origin: 252px 270px;
+  transition: transform 0.35s var(--bounce-ease);
+  will-change: transform;
+}
+
+.pupil-group {
+  transition: transform 0.08s ease-out;
+  will-change: transform;
+}
+
+/* Idle Breathing */
+.loly-container.idle-active .loly-character {
+  animation: loly-oled-breathe 4.5s ease-in-out infinite;
+}
+
+@keyframes loly-oled-breathe {
+  0%, 100% { transform: translateY(0px) scale(1, 1); }
+  50% { transform: translateY(-4px) scale(1.008, 0.995); }
+}
+
+.loly-container.idle-active .ahoge {
+  animation: loly-ahoge-bounce 5s ease-in-out infinite;
+}
+
+@keyframes loly-ahoge-bounce {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(3deg) scaleY(0.96); }
+  75% { transform: rotate(-2.5deg) scaleY(1.02); }
+}
+
+.loly-container.idle-active .hair-back {
+  animation: loly-hair-sway 6s ease-in-out infinite;
+}
+
+@keyframes loly-hair-sway {
+  0%, 100% { transform: rotate(0deg); }
+  33% { transform: rotate(0.8deg); }
+  66% { transform: rotate(-0.8deg); }
+}
+
+/* Thinking Floating Animation */
+.emote-thinking {
+  animation: loly-float-thought 3.2s ease-in-out infinite;
+}
+
+@keyframes loly-float-thought {
+  0%, 100% { transform: translate(280px, 70px) scale(1); }
+  50% { transform: translate(283px, 64px) scale(1.04); }
+}
+
+.bulb-halo {
+  animation: loly-bulb-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes loly-bulb-pulse {
+  0% { opacity: 0.4; transform: scale(0.85); }
+  100% { opacity: 0.95; transform: scale(1.2); }
+}
+
+/* Typing / Coding Motion */
+.loly-container.loly-coding .sleeve-left {
+  animation: loly-typing-left 0.4s ease-in-out infinite alternate;
+}
+.loly-container.loly-coding .sleeve-right {
+  animation: loly-typing-right 0.4s ease-in-out infinite alternate 0.2s;
+}
+
+@keyframes loly-typing-left {
+  0% { transform: rotate(13deg) translate(12px, -8px); }
+  100% { transform: rotate(17deg) translate(12px, -4px); }
+}
+
+@keyframes loly-typing-right {
+  0% { transform: rotate(-13deg) translate(-12px, -8px); }
+  100% { transform: rotate(-17deg) translate(-12px, -4px); }
+}
+
+/* Blinking */
+.loly-blinking .eye-left,
+.loly-blinking .eye-right {
+  animation: loly-quick-blink 0.18s ease-in-out;
+}
+
+@keyframes loly-quick-blink {
+  0%, 100% { transform: scaleY(1); }
+  50% { transform: scaleY(0.08); }
+}
+
+/* Click Reaction */
+.loly-clicked .loly-character {
+  animation: loly-click-react 0.45s var(--bounce-ease);
+}
+
+@keyframes loly-click-react {
+  0% { transform: scale(1, 1); }
+  30% { transform: translateY(8px) scale(1.05, 0.92); }
+  60% { transform: translateY(-12px) scale(0.96, 1.06); }
+  100% { transform: translateY(0) scale(1, 1); }
+}
+
+/* Sparkles */
+.sparkle-1 { animation: loly-sparkle-twinkle 3.2s ease-in-out infinite; }
+.sparkle-3 { animation: loly-sparkle-twinkle 3.6s ease-in-out infinite 1.4s; }
+
+@keyframes loly-sparkle-twinkle {
+  0%, 100% { opacity: 0.35; transform: scale(0.85); }
+  50% { opacity: 0.95; transform: scale(1.15); }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .oled-island,
+  .loly-character,
+  .ahoge,
+  .hair-back,
+  .sleeve-left,
+  .sleeve-right {
+    animation: none !important;
+    transition-duration: 0.01s !important;
+  }
+}

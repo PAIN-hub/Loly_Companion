@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Loly Companion — Settings & Full Control Center</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Full-window standalone settings page styles with pure black #000000 theme */
+    body.settings-fullpage {
+      background: #000000 !important;
+      color: #ffffff !important;
+      margin: 0;
+      padding: 0;
+      width: 100vw;
+      height: 100vh;
+      overflow-y: auto;
+      user-select: auto;
+      -webkit-user-select: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .settings-app-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 24px;
+      background: #0a0b0e;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+      flex-shrink: 0;
+    }
+
+    .settings-brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .settings-brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: #14171f;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .settings-brand h2 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #ffffff;
+    }
+
+    .settings-brand p {
+      margin: 2px 0 0 0;
+      font-size: 11px;
+      color: #94a3b8;
+    }
+
+    .settings-layout {
+      display: flex;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .settings-sidebar {
+      width: 220px;
+      background: #060709;
+      border-right: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 16px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .settings-nav-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      color: #94a3b8;
+      font-size: 13px;
+      font-weight: 500;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .settings-nav-btn:hover {
+      background: #12141a;
+      color: #ffffff;
+    }
+
+    .settings-nav-btn.active {
+      background: #1a1d26;
+      border-color: rgba(255, 255, 255, 0.15);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .settings-content-pane {
+      flex: 1;
+      padding: 24px 32px;
+      overflow-y: auto;
+      background: #000000;
+    }
+
+    .full-pane {
+      display: none;
+      animation: fadeIn 0.2s ease-out;
+    }
+
+    .full-pane.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .pane-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: #ffffff;
+    }
+
+    .pane-subtitle {
+      font-size: 12.5px;
+      color: #94a3b8;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .settings-card {
+      background: #0a0b0e;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .settings-row-full {
+      margin-bottom: 18px;
+    }
+
+    .settings-row-full:last-child {
+      margin-bottom: 0;
+    }
+
+    .settings-label-full {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin-bottom: 6px;
+    }
+
+    .text-input-full {
+      width: 100%;
+      background: #12141a;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 8px;
+      padding: 10px 14px;
+      color: #ffffff;
+      font-size: 13px;
+      box-sizing: border-box;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .text-input-full:focus {
+      border-color: #ffffff;
+    }
+
+    .btn-save-key-full {
+      margin-top: 10px;
+      background: #ffffff;
+      color: #000000;
+      font-weight: 600;
+      padding: 9px 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: opacity 0.2s ease;
+    }
+
+    .btn-save-key-full:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body class="settings-fullpage dark-mode">
+
+  <!-- Header -->
+  <header class="settings-app-header">
+    <div class="settings-brand">
+      <div class="settings-brand-icon">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ffffff" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </div>
+      <div>
+        <h2>Loly Control Center & Settings</h2>
+        <p>Full view for services, audio library, agent hooks, and Gemini settings</p>
+      </div>
+    </div>
+    <div style="font-size: 11px; color: #94a3b8; display: flex; align-items: center; gap: 8px;">
+      <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+      <span>Island Active</span>
+    </div>
+  </header>
+
+  <!-- Layout Container -->
+  <div class="settings-layout">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="settings-sidebar">
+      <button type="button" class="settings-nav-btn active" data-tab="tab-api">
+        <span>🔑</span>
+        <span>Gemini API & AI</span>
+      </button>
+      <button type="button" class="settings-nav-btn" data-tab="tab-music">
+        <span>🎵</span>
+        <span>Music & Storage</span>
+      </button>
+      <button type="button" class="settings-nav-btn" data-tab="tab-sim">
+        <span>⚡</span>
+        <span>Hook Simulator</span>
+      </button>
+      <button type="button" class="settings-nav-btn" data-tab="tab-prefs">
+        <span>⚙️</span>
+        <span>Audit & Stats</span>
+      </button>
+    </aside>
+
+    <!-- Content Area -->
+    <main class="settings-content-pane">
+      
+      <!-- PANE 1: GEMINI API & AI -->
+      <section class="full-pane active" id="tab-api">
+        <h3 class="pane-title">Google Gemini API Configuration</h3>
+        <p class="pane-subtitle">Configure your API credentials and review active AI model settings. Settings are synchronized with the dynamic island.</p>
+
+        <div class="settings-card">
+          <div class="settings-row-full">
+            <label for="fullApiKeyInput" class="settings-label-full">Gemini API Key</label>
+            <input type="password" id="fullApiKeyInput" placeholder="Enter API key or read from GEMINI_API_KEY..." class="text-input-full" />
+            <button type="button" class="btn-save-key-full" id="btnFullSaveKey">Save Key to SQLite</button>
+            <span id="fullKeyStatus" style="font-size: 12px; margin-left: 12px;"></span>
+          </div>
+
+          <div class="settings-row-full" style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 16px;">
+            <label class="settings-label-full">Active Conversational Model</label>
+            <select id="fullModelSelect" class="text-input-full" style="cursor: pointer;">
+              <option value="gemini-3.5-flash">Gemini 3.5 Flash (Fast, Recommended)</option>
+              <option value="gemini-3.8-flash">Gemini 3.8 Flash (Latest Flagship)</option>
+              <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
+              <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
+              <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
+              <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
+              <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
+              <option value="antigravity-preview-latest">Antigravity Preview</option>
+            </select>
+            <p style="font-size: 11px; color: #94a3b8; margin-top: 6px;">You can also switch models anytime directly inside the Chat interface capsule on the dynamic island.</p>
+          </div>
+
+          <div class="settings-row-full" style="margin-top: 16px;">
+            <label class="settings-label-full">AI Personality & Persona</label>
+            <div style="background: #14171f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 12px; font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+              <strong>Active Mode: Concise & Short Talk</strong><br/>
+              Loly is configured to reply directly in 1-2 short sentences (maximum 25-30 words) with real-time typewriter text and synced animated mascot mouth movement.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANE 2: MUSIC & STORAGE -->
+      <section class="full-pane" id="tab-music">
+        <h3 class="pane-title">Internal Storage Audio Player</h3>
+        <p class="pane-subtitle">Load audio tracks from internal storage, manage playlists, and adjust ambient playback.</p>
+
+        <div class="settings-card">
+          <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <input type="file" id="fullAudioFilesInput" accept="audio/*, .mp3, .wav, .ogg, .flac" multiple style="display: none;" />
+            <button type="button" class="btn-save-key-full" id="btnFullSelectAudio">📂 Load Audio Files</button>
+            <button type="button" class="btn-save-key-full" style="background: transparent; color: #ffffff; border: 1px solid rgba(255,255,255,0.2);" id="btnFullClearPlaylist">Clear Library</button>
+          </div>
+
+          <div style="background: #060709; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 16px; min-height: 160px; max-height: 280px; overflow-y: auto;" id="fullPlaylistList">
+            <p style="color: #64748b; font-size: 12px; margin: 0;">No audio files loaded yet. Click 'Load Audio Files' to add local tracks from storage.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANE 3: HOOK SIMULATOR -->
+      <section class="full-pane" id="tab-sim">
+        <h3 class="pane-title">AI Coding Agent Event Simulator</h3>
+        <p class="pane-subtitle">Simulate live agent events to test how Loly automatically responds with animations and approval prompts on your screen.</p>
+
+        <div class="settings-card">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <button type="button" class="settings-nav-btn" style="background: #12141a; border-color: rgba(255,255,255,0.1);" id="fullSimBash">
+              <span>▶</span>
+              <div>
+                <strong style="color: #ffffff; font-size: 12.5px;">Bash Command Approval</strong>
+                <p style="margin: 2px 0 0 0; font-size: 10.5px; color: #94a3b8;">Simulates `npm test --coverage` approval request</p>
+              </div>
+            </button>
+            <button type="button" class="settings-nav-btn" style="background: #12141a; border-color: rgba(255,255,255,0.1);" id="fullSimFile">
+              <span>📝</span>
+              <div>
+                <strong style="color: #ffffff; font-size: 12.5px;">File Edit Diff</strong>
+                <p style="margin: 2px 0 0 0; font-size: 10.5px; color: #94a3b8;">Simulates modifying `server.js (+18 -4)`</p>
+              </div>
+            </button>
+            <button type="button" class="settings-nav-btn" style="background: #12141a; border-color: rgba(255,255,255,0.1);" id="fullSimQuestion">
+              <span>❓</span>
+              <div>
+                <strong style="color: #ffffff; font-size: 12.5px;">Multiple Choice Decision</strong>
+                <p style="margin: 2px 0 0 0; font-size: 10.5px; color: #94a3b8;">Simulates agent asking for choice</p>
+              </div>
+            </button>
+            <button type="button" class="settings-nav-btn" style="background: #12141a; border-color: rgba(255,255,255,0.1);" id="fullSimSuccess">
+              <span>🎉</span>
+              <div>
+                <strong style="color: #ffffff; font-size: 12.5px;">Agent Success Celebration</strong>
+                <p style="margin: 2px 0 0 0; font-size: 10.5px; color: #94a3b8;">Triggers celebration bounce & chime</p>
+              </div>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- PANE 4: PREFERENCES & AUDIT -->
+      <section class="full-pane" id="tab-prefs">
+        <h3 class="pane-title">Preferences & Audit Log</h3>
+        <p class="pane-subtitle">System statistics, local SQLite database metrics, and sound preferences.</p>
+
+        <div class="settings-card">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px;">
+            <div style="background: #12141a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; text-align: center;">
+              <div id="fullStatSessions" style="font-size: 24px; font-weight: 700; color: #ffffff;">0</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Sessions</div>
+            </div>
+            <div style="background: #12141a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; text-align: center;">
+              <div id="fullStatEvents" style="font-size: 24px; font-weight: 700; color: #ffffff;">0</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Events Logged</div>
+            </div>
+            <div style="background: #12141a; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 14px; text-align: center;">
+              <div id="fullStatApprovals" style="font-size: 24px; font-weight: 700; color: #ffffff;">0</div>
+              <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Approvals</div>
+            </div>
+          </div>
+
+          <div class="settings-row-full">
+            <label class="settings-label-full">Local SQLite Database</label>
+            <input type="text" readonly value="loly.db (Persistent Storage)" class="text-input-full" style="color: #94a3b8;" />
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <script>
+    // Tab switching in full settings window
+    const navBtns = document.querySelectorAll('.settings-nav-btn');
+    const panes = document.querySelectorAll('.full-pane');
+
+    navBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        navBtns.forEach(b => b.classList.remove('active'));
+        panes.forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        const tabId = btn.getAttribute('data-tab');
+        const targetPane = document.getElementById(tabId);
+        if (targetPane) targetPane.classList.add('active');
+      });
+    });
+
+    // Load active config
+    const apiKeyInput = document.getElementById('fullApiKeyInput');
+    const btnSaveKey = document.getElementById('btnFullSaveKey');
+    const keyStatus = document.getElementById('fullKeyStatus');
+    const modelSelect = document.getElementById('fullModelSelect');
+
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(cfg => {
+        if (cfg.hasApiKey && cfg.maskedKey) {
+          apiKeyInput.placeholder = `Active key: ${cfg.maskedKey}`;
+        }
+        if (cfg.activeModel && modelSelect) {
+          modelSelect.value = cfg.activeModel;
+        }
+      }).catch(() => {});
+
+    // Fetch dynamic models list
+    fetch('/api/gemini/models')
+      .then(r => r.json())
+      .then(d => {
+        if (d.models && d.models.length && modelSelect) {
+          const current = modelSelect.value || d.currentModel;
+          modelSelect.innerHTML = '';
+          d.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m.id;
+            opt.textContent = m.name || m.id;
+            if (m.id === current) opt.selected = true;
+            modelSelect.appendChild(opt);
+          });
+        }
+      }).catch(() => {});
+
+    // Save key
+    btnSaveKey.addEventListener('click', async () => {
+      const keyVal = apiKeyInput.value.trim();
+      if (!keyVal) return;
+      try {
+        const res = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ apiKey: keyVal })
+        });
+        if (res.ok) {
+          keyStatus.textContent = 'Saved!';
+          keyStatus.style.color = '#10b981';
+          setTimeout(() => { keyStatus.textContent = ''; }, 3000);
+        }
+      } catch (_) {}
+    });
+
+    // Model selection change
+    modelSelect.addEventListener('change', async () => {
+      const selected = modelSelect.value;
+      try {
+        await fetch('/api/gemini/model', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ model: selected })
+        });
+      } catch (_) {}
+    });
+
+    // Simulator triggers
+    function triggerHook(data) {
+      fetch('/api/hook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      }).catch(() => {});
+    }
+
+    document.getElementById('fullSimBash')?.addEventListener('click', () => {
+      triggerHook({
+        coucou_agent: 'gemini-cli',
+        event_type: 'permission_request',
+        title: 'Bash Command Approval Required',
+        target: 'npm test -- --coverage',
+        action_type: 'bash_command'
+      });
+    });
+
+    document.getElementById('fullSimFile')?.addEventListener('click', () => {
+      triggerHook({
+        coucou_agent: 'claude-code',
+        event_type: 'file_edit',
+        title: 'File Modification Diff',
+        target: 'server.js (+18 -4)'
+      });
+    });
+
+    document.getElementById('fullSimQuestion')?.addEventListener('click', () => {
+      triggerHook({
+        coucou_agent: 'antigravity',
+        event_type: 'question',
+        title: 'Multiple Choice Prompt',
+        target: 'Proceed with refactoring migration?'
+      });
+    });
+
+    document.getElementById('fullSimSuccess')?.addEventListener('click', () => {
+      triggerHook({
+        coucou_agent: 'gemini-cli',
+        event_type: 'finished',
+        title: 'Agent Task Completed',
+        target: 'All tasks completed successfully!'
+      });
+    });
+
+    // Stats
+    const sse = new EventSource('/api/events');
+    sse.addEventListener('init', (e) => {
+      try {
+        const d = JSON.parse(e.data);
+        if (d.stats) {
+          document.getElementById('fullStatSessions').textContent = d.stats.sessions || 0;
+          document.getElementById('fullStatEvents').textContent = d.stats.events || 0;
+          document.getElementById('fullStatApprovals').textContent = d.stats.approvals || 0;
+        }
+      } catch (_) {}
+    });
+  </script>
+</body>
+</html>

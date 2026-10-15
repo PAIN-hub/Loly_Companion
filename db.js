@@ -69,6 +69,11 @@ export class AppDatabase {
         content TEXT NOT NULL,
         created_at TEXT NOT NULL
       );
+
+      CREATE TABLE IF NOT EXISTS settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
     `);
   }
 
@@ -135,6 +140,26 @@ export class AppDatabase {
     const stmt = this.db.prepare('SELECT * FROM chat_history ORDER BY id DESC LIMIT ?');
     const rows = stmt.all(limit);
     return rows.reverse();
+  }
+
+  getSetting(key) {
+    try {
+      const stmt = this.db.prepare('SELECT value FROM settings WHERE key = ?');
+      const row = stmt.get(key);
+      return row ? row.value : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  setSetting(key, value) {
+    try {
+      const stmt = this.db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+      stmt.run(key, String(value));
+      return true;
+    } catch (_) {
+      return false;
+    }
   }
 }
 

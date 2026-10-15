@@ -1,0 +1,379 @@
+/**
+ * Loly Desktop Companion - Core Styles & Animation Engine
+ * Optimized for lightweight performance on integrated graphics
+ */
+
+:root {
+  --loly-scale: 1;
+  --loly-transition-speed: 0.25s;
+  --loly-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --loly-ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Character Container */
+.loly-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+  overflow: visible;
+  will-change: transform;
+}
+
+/* SVG Root */
+.loly-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: visible;
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.08));
+  transition: transform var(--loly-transition-speed) var(--loly-ease-smooth);
+}
+
+/* IDLE ANIMATIONS */
+/* Breathing & Body Bobbing */
+.loly-container.idle-active .loly-character {
+  animation: loly-breathe 4.5s ease-in-out infinite;
+}
+
+@keyframes loly-breathe {
+  0%, 100% {
+    transform: translateY(0px) scale(1, 1);
+  }
+  50% {
+    transform: translateY(-5px) scale(1.008, 0.995);
+  }
+}
+
+/* Subtle Hair Swaying */
+.loly-container.idle-active .hair-back {
+  animation: loly-hair-sway 6s ease-in-out infinite;
+}
+
+@keyframes loly-hair-sway {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  33% {
+    transform: rotate(0.8deg);
+  }
+  66% {
+    transform: rotate(-0.8deg);
+  }
+}
+
+/* Ahoge (Antenna Hair) Spring */
+.loly-container.idle-active .ahoge {
+  animation: loly-ahoge-bounce 5s ease-in-out infinite;
+}
+
+@keyframes loly-ahoge-bounce {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  25% {
+    transform: rotate(3deg) scaleY(0.96);
+  }
+  75% {
+    transform: rotate(-2.5deg) scaleY(1.02);
+  }
+}
+
+/* Subtle Sparkles Twinkle */
+.loly-container.idle-active .sparkle-1 {
+  animation: loly-sparkle-twinkle 3.2s ease-in-out infinite;
+}
+.loly-container.idle-active .sparkle-2 {
+  animation: loly-sparkle-twinkle 4.1s ease-in-out infinite 0.8s;
+}
+.loly-container.idle-active .sparkle-3 {
+  animation: loly-sparkle-twinkle 3.6s ease-in-out infinite 1.4s;
+}
+.loly-container.idle-active .sparkle-4 {
+  animation: loly-sparkle-twinkle 4.5s ease-in-out infinite 0.3s;
+}
+.loly-container.idle-active .sparkle-dot-1 {
+  animation: loly-dot-fade 2.8s ease-in-out infinite;
+}
+.loly-container.idle-active .sparkle-dot-2 {
+  animation: loly-dot-fade 3.1s ease-in-out infinite 1s;
+}
+
+@keyframes loly-sparkle-twinkle {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 0.95;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes loly-dot-fade {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translateY(-3px);
+  }
+}
+
+/* HEAD, BODY & PUPIL TRACKING */
+.head {
+  transform-origin: 200px 242px; /* Anchored naturally at the neck joint */
+  transition: transform 0.22s var(--loly-ease-smooth);
+  will-change: transform;
+}
+
+/* SLEEVES & HAND MOVEMENT */
+.sleeve-left {
+  transform-origin: 148px 270px; /* Left shoulder joint */
+  transition: transform 0.35s var(--loly-ease-bounce);
+  will-change: transform;
+}
+
+.sleeve-right {
+  transform-origin: 252px 270px; /* Right shoulder joint */
+  transition: transform 0.35s var(--loly-ease-bounce);
+  will-change: transform;
+}
+
+.pupil-group {
+  transition: transform 0.08s ease-out;
+  will-change: transform;
+}
+
+/* BLINK SYSTEM */
+.loly-blinking .eye-left,
+.loly-blinking .eye-right {
+  animation: loly-quick-blink 0.18s ease-in-out;
+}
+
+@keyframes loly-quick-blink {
+  0% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.08);
+  }
+  100% {
+    transform: scaleY(1);
+  }
+}
+
+.eye {
+  transform-origin: 200px 186px;
+}
+
+/* CLICK INTERACTION */
+.loly-clicked .loly-character {
+  animation: loly-click-react 0.45s var(--loly-ease-bounce);
+}
+
+@keyframes loly-click-react {
+  0% {
+    transform: scale(1, 1);
+  }
+  30% {
+    transform: translateY(8px) scale(1.05, 0.92);
+  }
+  60% {
+    transform: translateY(-12px) scale(0.96, 1.06);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+/* SUCCESS / EXCITED JUMP */
+.loly-success .loly-character {
+  animation: loly-success-jump 0.8s var(--loly-ease-bounce);
+}
+
+@keyframes loly-success-jump {
+  0% {
+    transform: translateY(0) scale(1, 1);
+  }
+  20% {
+    transform: translateY(10px) scale(1.08, 0.9);
+  }
+  50% {
+    transform: translateY(-24px) scale(0.95, 1.06);
+  }
+  75% {
+    transform: translateY(-6px) scale(1.02, 0.98);
+  }
+  100% {
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+/* ERROR / SURPRISED SHAKE */
+.loly-error .loly-character {
+  animation: loly-error-shake 0.5s ease-in-out;
+}
+
+@keyframes loly-error-shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-8px) rotate(-1.5deg);
+  }
+  40% {
+    transform: translateX(8px) rotate(1.5deg);
+  }
+  60% {
+    transform: translateX(-5px) rotate(-1deg);
+  }
+  80% {
+    transform: translateX(4px) rotate(0.8deg);
+  }
+}
+
+/* EXPRESSION OVERLAYS & EMOTES */
+.emote-fx {
+  transition: opacity 0.25s ease, transform 0.25s var(--loly-ease-bounce);
+}
+
+/* Thinking Cloud Floating & Glow Animation */
+.emote-thinking {
+  animation: loly-float-thought 3.2s ease-in-out infinite;
+}
+
+@keyframes loly-float-thought {
+  0%, 100% {
+    transform: translate(280px, 70px) scale(1);
+  }
+  50% {
+    transform: translate(283px, 64px) scale(1.04);
+  }
+}
+
+.bulb-halo {
+  animation: loly-bulb-pulse 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes loly-bulb-pulse {
+  0% { opacity: 0.4; transform: scale(0.85); }
+  100% { opacity: 0.95; transform: scale(1.2); }
+}
+
+.thought-bubble-1 {
+  animation: loly-thought-bubble 2.4s ease-in-out infinite;
+}
+.thought-bubble-2 {
+  animation: loly-thought-bubble 2.4s ease-in-out infinite 0.25s;
+}
+.thought-bubble-3 {
+  animation: loly-thought-bubble 2.4s ease-in-out infinite 0.5s;
+}
+
+@keyframes loly-thought-bubble {
+  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* Coding / Typing Continuous Hand Motion */
+.loly-container.loly-coding .sleeve-left {
+  animation: loly-typing-left 0.4s ease-in-out infinite alternate;
+}
+.loly-container.loly-coding .sleeve-right {
+  animation: loly-typing-right 0.4s ease-in-out infinite alternate 0.2s;
+}
+
+@keyframes loly-typing-left {
+  0% { transform: rotate(13deg) translate(12px, -8px); }
+  100% { transform: rotate(17deg) translate(12px, -4px); }
+}
+
+@keyframes loly-typing-right {
+  0% { transform: rotate(-13deg) translate(-12px, -8px); }
+  100% { transform: rotate(-17deg) translate(-12px, -4px); }
+}
+
+.zzz-1 {
+  animation: loly-zzz-float 2.5s ease-out infinite;
+}
+.zzz-2 {
+  animation: loly-zzz-float 2.5s ease-out infinite 0.5s;
+}
+.zzz-3 {
+  animation: loly-zzz-float 2.5s ease-out infinite 1s;
+}
+
+@keyframes loly-zzz-float {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.8);
+  }
+  50% {
+    opacity: 0.9;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(10px, -20px) scale(1.15);
+  }
+}
+
+.hud-pulse {
+  animation: loly-pulse 1.2s ease-in-out infinite alternate;
+}
+
+@keyframes loly-pulse {
+  0% {
+    opacity: 0.4;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* EMBLEM GLOWING ON HOODIE */
+.emblem-halo {
+  animation: loly-glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes loly-glow {
+  0% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  100% {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+}
+
+/* ACCESSIBILITY: REDUCED MOTION */
+@media (prefers-reduced-motion: reduce) {
+  .loly-character,
+  .hair-back,
+  .ahoge,
+  .sparkle,
+  .sparkle-dot,
+  .zzz-1,
+  .zzz-2,
+  .zzz-3,
+  .hud-pulse,
+  .emblem-halo {
+    animation: none !important;
+  }
+  .loly-svg,
+  .head,
+  .pupil-group,
+  .eyebrow,
+  .mouth-shape {
+    transition-duration: 0.01s !important;
+  }
+}

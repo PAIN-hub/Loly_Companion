@@ -6,6 +6,7 @@ import './server.js'; // Start embedded backend daemon automatically
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 let mainWindow = null;
+let settingsWindow = null;
 let tray = null;
 
 // Authentic Dynamic Island Notch Dimensions
@@ -13,6 +14,42 @@ const COLLAPSED_WIDTH = 420;
 const COLLAPSED_HEIGHT = 46;
 const EXPANDED_WIDTH = 680;
 const EXPANDED_HEIGHT = 540;
+
+function createSettingsWindow() {
+  if (settingsWindow && !settingsWindow.isDestroyed()) {
+    settingsWindow.show();
+    settingsWindow.focus();
+    return;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
+  const winWidth = 840;
+  const winHeight = 660;
+  const posX = Math.round((screenWidth - winWidth) / 2);
+  const posY = Math.max(60, Math.round((screenHeight - winHeight) / 2));
+
+  settingsWindow = new BrowserWindow({
+    width: winWidth,
+    height: winHeight,
+    x: posX,
+    y: posY,
+    title: 'Loly — Settings & Full Control Center',
+    backgroundColor: '#000000',
+    autoHideMenuBar: true,
+    resizable: true,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.cjs'),
+      nodeIntegration: false,
+      contextIsolation: true
+    }
+  });
+
+  settingsWindow.loadURL('http://127.0.0.1:4141/settings.html');
+  settingsWindow.on('closed', () => {
+    settingsWindow = null;
+  });
+}
 
 function createIslandWindow() {
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -100,6 +137,11 @@ function createIslandWindow() {
 
   ipcMain.handle('close-app', () => {
     app.quit();
+  });
+
+  ipcMain.handle('open-settings-window', () => {
+    createSettingsWindow();
+    return { success: true };
   });
 
   // Global Shortcut: Ctrl+Shift+L to toggle Island

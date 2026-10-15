@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loly Companion — Desktop Island & AI Agent Monitor</title>
+  <meta name="description" content="A desktop companion for Windows & Linux keeping an eye on AI coding agents with Google Gemini API integration, dynamic screen island, and interactive mascot." />
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Header / Navigation -->
+  <header class="site-header">
+    <div class="container header-container">
+      <a href="#" class="brand-logo">
+        <img src="icon.png" alt="Loly Logo" class="brand-img" />
+        <span class="brand-name">Loly</span>
+        <span class="brand-badge">Companion</span>
+      </a>
+      <nav class="site-nav">
+        <a href="#features">Features</a>
+        <a href="#simulator">Live Demo</a>
+        <a href="#downloads">Downloads</a>
+        <a href="#quickstart">Quickstart</a>
+        <a href="#gemini-guide">Gemini API</a>
+      </nav>
+      <div class="header-actions">
+        <a href="https://github.com/PAIN-hub/Loly_Companion" target="_blank" rel="noopener noreferrer" class="btn btn-secondary github-btn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          GitHub
+        </a>
+        <a href="#downloads" class="btn btn-primary">Get Loly</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section with Interactive Mascot -->
+  <section class="hero-section">
+    <div class="container hero-container">
+      <div class="hero-content">
+        <div class="hero-tag">
+          <span class="tag-dot"></span>
+          <span>Open Source AI Agent Screen Companion</span>
+        </div>
+        <h1 class="hero-title">Keep an eye on your AI coding agents.</h1>
+        <p class="hero-description">
+          A desktop screen island for <strong>Windows & Linux</strong>. Featuring an interactive animated mascot whose eyes track your cursor, one-click terminal permission approvals, live diff reviews, procedural focus lo-fi music, and built-in Google Gemini API intelligence.
+        </p>
+
+        <!-- OS Download Buttons -->
+        <div class="hero-buttons">
+          <a href="#downloads-windows" class="btn btn-primary download-hero-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.802"/>
+            </svg>
+            <div>
+              <span class="btn-micro">Download for</span>
+              <strong class="btn-main">Windows (x64)</strong>
+            </div>
+          </a>
+
+          <a href="#downloads-linux" class="btn btn-secondary download-hero-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.002 0C8.36 0 5.86 2.37 5.86 5.81c0 1.25.32 2.56.91 3.75-.41 1.05-.63 2.19-.63 3.39 0 4.14 2.62 7.77 6.47 9.05.65.22 1.35.34 2.06.34.71 0 1.41-.12 2.06-.34 3.85-1.28 6.47-4.91 6.47-9.05 0-1.2-.22-2.34-.63-3.39.59-1.19.91-2.5.91-3.75C23.47 2.37 20.97 0 17.33 0c-1.39 0-2.73.37-3.9 1.03C12.26.37 10.92 0 12.002 0z"/>
+            </svg>
+            <div>
+              <span class="btn-micro">Download for</span>
+              <strong class="btn-main">Linux (AppImage / Deb)</strong>
+            </div>
+          </a>
+        </div>
+
+        <div class="hero-meta">
+          <span>✓ 100% Free & Open Source</span>
+          <span>✓ Zero Cloud Telemetry</span>
+          <span>✓ Works with Gemini CLI, Claude Code, Cursor, Antigravity</span>
+        </div>
+      </div>
+
+      <!-- Hero Mascot Card -->
+      <div class="hero-mascot-card" id="heroMascotCard">
+        <div class="mascot-island-header">
+          <div class="island-notch-pill">
+            <span class="mascot-status-dot"></span>
+            <span class="mascot-status-text" id="mascotStatusText">Loly is watching your cursor</span>
+          </div>
+        </div>
+
+        <!-- Interactive Mascot SVG -->
+        <div class="mascot-svg-wrap">
+          <svg id="mascotSvg" viewBox="0 0 180 180" width="180" height="180">
+            <!-- Cat / Anime Ears -->
+            <polygon points="35,65 18,15 70,42" fill="#1e293b" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+            <polygon points="40,58 28,26 64,44" fill="#cbd5e1"/>
+            
+            <polygon points="145,65 162,15 110,42" fill="#1e293b" stroke="#0f172a" stroke-width="2" stroke-linejoin="round"/>
+            <polygon points="140,58 152,26 116,44" fill="#cbd5e1"/>
+
+            <!-- Hair Back -->
+            <ellipse cx="90" cy="98" rx="66" ry="60" fill="#0f172a"/>
+
+            <!-- Face Base -->
+            <ellipse cx="90" cy="102" rx="46" ry="40" fill="#f8fafc" stroke="#cbd5e1" stroke-width="2"/>
+
+            <!-- Cheeks -->
+            <circle cx="58" cy="115" r="7" fill="#e2e8f0" opacity="0.8"/>
+            <circle cx="122" cy="115" r="7" fill="#e2e8f0" opacity="0.8"/>
+
+            <!-- Left Eye Sclera -->
+            <ellipse cx="70" cy="96" rx="14" ry="17" fill="#ffffff" stroke="#0f172a" stroke-width="2.5"/>
+            <!-- Left Pupil (Moves with Cursor) -->
+            <g id="leftPupil" transform="translate(0, 0)">
+              <ellipse cx="70" cy="96" rx="8" ry="11" fill="#0f172a"/>
+              <circle cx="67" cy="92" r="3.5" fill="#ffffff"/>
+              <circle cx="73" cy="99" r="1.5" fill="#ffffff"/>
+            </g>
+
+            <!-- Right Eye Sclera -->
+            <ellipse cx="110" cy="96" rx="14" ry="17" fill="#ffffff" stroke="#0f172a" stroke-width="2.5"/>
+            <!-- Right Pupil (Moves with Cursor) -->
+            <g id="rightPupil" transform="translate(0, 0)">
+              <ellipse cx="110" cy="96" rx="8" ry="11" fill="#0f172a"/>
+              <circle cx="107" cy="92" r="3.5" fill="#ffffff"/>
+              <circle cx="113" cy="99" r="1.5" fill="#ffffff"/>
+            </g>
+
+            <!-- Nose -->
+            <polygon points="90,105 88,107 92,107" fill="#475569"/>
+
+            <!-- Mouth -->
+            <path id="mascotMouth" d="M 83 115 Q 90 120 97 115" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round"/>
+
+            <!-- Hair Bangs Front -->
+            <path d="M 44 80 Q 70 95 90 78 Q 110 95 136 80 Q 140 60 90 55 Q 40 60 44 80 Z" fill="#1e293b"/>
+          </svg>
+        </div>
+
+        <div class="mascot-controls">
+          <div class="mood-buttons">
+            <button class="mood-btn active" data-mood="idle">Idle</button>
+            <button class="mood-btn" data-mood="working">Working</button>
+            <button class="mood-btn" data-mood="alert">Alert</button>
+            <button class="mood-btn" data-mood="happy">Happy</button>
+          </div>
+          <p class="mascot-caption">Move your mouse to watch Loly track your gaze.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Interactive Live Simulator Section -->
+  <section class="section simulator-section" id="simulator">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">Interactive Preview</span>
+        <h2 class="section-title">Experience the Dynamic Island</h2>
+        <p class="section-subtitle">Simulate real agent events and permission approvals right inside this browser window.</p>
+      </div>
+
+      <div class="sim-wrapper">
+        <!-- Island Component -->
+        <div class="island-sim" id="islandSim">
+          <div class="island-bar">
+            <div class="island-left">
+              <span class="sim-pulse"></span>
+              <span class="sim-agent-badge" id="simAgentName">gemini-cli</span>
+            </div>
+            <div class="island-ticker" id="simTickerText">
+              Waiting for agent activity...
+            </div>
+            <div class="island-right">
+              <span class="sim-clock" id="simClock">12:00:00</span>
+            </div>
+          </div>
+
+          <!-- Pending Approval Card -->
+          <div class="sim-approval-card" id="simApprovalCard" style="display: none;">
+            <div class="approval-header">
+              <span class="approval-badge">⚠️ Approval Required</span>
+              <span class="approval-target" id="simApprovalCmd">rm -rf /dist</span>
+            </div>
+            <p class="approval-prompt">The agent wants to execute this bash command. Do you allow it?</p>
+            <div class="approval-actions">
+              <button class="btn btn-sm btn-primary" id="btnAllow">✓ Allow</button>
+              <button class="btn btn-sm btn-secondary" id="btnDeny">✗ Deny</button>
+              <button class="btn btn-sm btn-outline" id="btnAskGemini">✨ Ask Gemini Review</button>
+            </div>
+            <div class="gemini-review-box" id="geminiReviewBox" style="display: none;">
+              <strong>Gemini Safety Review:</strong>
+              <p>Analyzing command risk... Moderate risk: deletes local dist directory. Safe if dist is a build folder.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Simulator Event Dispatchers -->
+        <div class="sim-actions-grid">
+          <div class="sim-action-box">
+            <h4>Simulate Agent Actions</h4>
+            <div class="sim-btn-group">
+              <button class="btn btn-secondary btn-sm" id="simEventEdit">📝 File Edit (+42 -10)</button>
+              <button class="btn btn-secondary btn-sm" id="simEventTest">🧪 Run Unit Tests</button>
+              <button class="btn btn-secondary btn-sm" id="simEventApproval">⚠️ Trigger Approval</button>
+              <button class="btn btn-secondary btn-sm" id="simEventDone">🎉 Task Completed</button>
+            </div>
+          </div>
+
+          <div class="sim-action-box">
+            <h4>Built-in Focus Lo-Fi Soundscape</h4>
+            <div class="audio-controls">
+              <button class="btn btn-outline btn-sm" id="btnToggleAudio">▶ Play Ambient Lo-Fi</button>
+              <select id="simAudioTrack" class="select-input">
+                <option value="midnight">Midnight Lo-Fi</option>
+                <option value="cyber">Cyber Synthwave</option>
+                <option value="coffee">Chill Coffee Beats</option>
+                <option value="rain">Rain Ambient Focus</option>
+              </select>
+            </div>
+            <p class="audio-note">Synthesized live via native browser Web Audio API — zero downloads required.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Separate Downloads Section for Windows and Linux -->
+  <section class="section downloads-section" id="downloads">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">Production Binaries</span>
+        <h2 class="section-title">Download Loly Companion v1.0.0</h2>
+        <p class="section-subtitle">Choose your operating system below for standalone, zero-hassle desktop apps.</p>
+      </div>
+
+      <div class="downloads-grid">
+        <!-- Windows Card -->
+        <div class="download-card" id="downloads-windows">
+          <div class="download-card-header">
+            <div class="platform-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-13.051-1.802"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="platform-name">Windows</h3>
+              <p class="platform-desc">Windows 10 / 11 (64-bit)</p>
+            </div>
+          </div>
+
+          <ul class="download-options-list">
+            <li>
+              <div class="option-info">
+                <strong>Portable Executable (.exe)</strong>
+                <span>Run instantly without installer (95 MB)</span>
+              </div>
+              <a href="https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/Loly-1.0.0.exe" class="btn btn-primary btn-sm">
+                Download .exe
+              </a>
+            </li>
+
+            <li>
+              <div class="option-info">
+                <strong>Desktop Setup Installer (.exe)</strong>
+                <span>Full desktop installation with Start menu icon (95 MB)</span>
+              </div>
+              <a href="https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/Loly-Setup-1.0.0.exe" class="btn btn-secondary btn-sm">
+                Download Setup
+              </a>
+            </li>
+
+            <li>
+              <div class="option-info">
+                <strong>ZIP Package (.zip)</strong>
+                <span>Standalone zipped archive</span>
+              </div>
+              <a href="https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/loly-windows-package.zip" class="btn btn-outline btn-sm">
+                Download .zip
+              </a>
+            </li>
+          </ul>
+
+          <div class="download-card-footer">
+            <small>SHA-256 verified • Runs transparent overlay with always-on-top support.</small>
+          </div>
+        </div>
+
+        <!-- Linux Card -->
+        <div class="download-card" id="downloads-linux">
+          <div class="download-card-header">
+            <div class="platform-icon">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12.002 0C8.36 0 5.86 2.37 5.86 5.81c0 1.25.32 2.56.91 3.75-.41 1.05-.63 2.19-.63 3.39 0 4.14 2.62 7.77 6.47 9.05.65.22 1.35.34 2.06.34.71 0 1.41-.12 2.06-.34 3.85-1.28 6.47-4.91 6.47-9.05 0-1.2-.22-2.34-.63-3.39.59-1.19.91-2.5.91-3.75C23.47 2.37 20.97 0 17.33 0c-1.39 0-2.73.37-3.9 1.03C12.26.37 10.92 0 12.002 0z"/>
+              </svg>
+            </div>
+            <div>
+              <h3 class="platform-name">Linux</h3>
+              <p class="platform-desc">Ubuntu 22/24+, Debian, Kali, Fedora, Arch (x64)</p>
+            </div>
+          </div>
+
+          <ul class="download-options-list">
+            <li>
+              <div class="option-info">
+                <strong>Universal AppImage (.AppImage)</strong>
+                <span>Works on all distributions with or without libfuse2 (120 MB)</span>
+              </div>
+              <a href="https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/Loly-1.0.0.AppImage" class="btn btn-primary btn-sm">
+                Download AppImage
+              </a>
+            </li>
+
+            <li>
+              <div class="option-info">
+                <strong>Debian / Ubuntu Package (.deb)</strong>
+                <span>Native package installer via dpkg -i (95 MB)</span>
+              </div>
+              <a href="https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/loly_1.0.0_amd64.deb" class="btn btn-secondary btn-sm">
+                Download .deb
+              </a>
+            </li>
+
+            <li>
+              <div class="option-info">
+                <strong>Standalone Tarball (.tar.gz)</strong>
+                <span>Direct portable unpack and run (117 MB)</span>
+              </div>
+              <a href="https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/loly-linux-x64.tar.gz" class="btn btn-outline btn-sm">
+                Download .tar.gz
+              </a>
+            </li>
+          </ul>
+
+          <div class="download-card-footer">
+            <code>chmod +x Loly-1.0.0.AppImage && ./Loly-1.0.0.AppImage</code>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Grid -->
+  <section class="section features-section" id="features">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">Key Capabilities</span>
+        <h2 class="section-title">Built specifically for the agentic coding era.</h2>
+        <p class="section-subtitle">Everything you need to monitor, control, and collaborate with autonomous AI agents.</p>
+      </div>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feature-icon">👁️</div>
+          <h3>Cursor-Tracking Mascot</h3>
+          <p>Loly's pupils calculate exact angular vectors to watch your mouse cursor smoothly across your screen, reacting to your focus and tasks.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <h3>In-Pill Approvals</h3>
+          <p>Review CLI commands and file diffs without switching terminals. Click Allow, Deny, or Always directly from your screen notch.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">✨</div>
+          <h3>Google Gemini Integration</h3>
+          <p>Instant streaming chat powered by Gemini 2.5 Flash, safety command analysis, and drag-and-drop code inspection.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🎵</div>
+          <h3>Procedural Lo-Fi Music</h3>
+          <p>4 built-in focus soundscapes generated directly via Web Audio API. Zero external MP3 files, zero latency, lightweight ambient flow.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔒</div>
+          <h3>Local SQLite Audit Log</h3>
+          <p>Every agent step, command, approval decision, and chat message is logged in local SQLite (`~/.loly/loly.db`). 100% private.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feature-icon">🔌</div>
+          <h3>Universal Hook Bus</h3>
+          <p>Connects with any agent via Unix domain socket (`/tmp/coucou.sock`), Windows named pipes, or simple HTTP POST requests.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quickstart via Node.js Section -->
+  <section class="section quickstart-section" id="quickstart">
+    <div class="container">
+      <div class="section-header text-center">
+        <span class="section-tag">Developer Setup</span>
+        <h2 class="section-title">Run with Node.js in 3 Steps</h2>
+        <p class="section-subtitle">Clone the repository and run Loly directly on your machine.</p>
+      </div>
+
+      <div class="terminal-block">
+        <div class="terminal-header">
+          <div class="term-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="term-title">bash — Terminal</span>
+          <button class="copy-term-btn" id="btnCopyCode">Copy</button>
+        </div>
+        <pre><code id="codeSnippet"># 1. Clone the repository
+git clone https://github.com/PAIN-hub/Loly_Companion.git
+cd Loly_Companion
+
+# 2. Install dependencies
+npm install
+
+# 3. Start the background server
+npm start
+
+# (Optional) Launch the transparent floating Electron island
+npm run electron</code></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gemini API Guide Callout -->
+  <section class="section gemini-guide-section" id="gemini-guide">
+    <div class="container">
+      <div class="guide-banner">
+        <div class="guide-text">
+          <span class="guide-badge">Free API Access</span>
+          <h2>How to Acquire Your Google Gemini API Key</h2>
+          <p>Google AI Studio provides free Gemini API keys with 1,500 requests/day and no credit card required. Read our complete walkthrough to set up your key in under 2 minutes.</p>
+          <div class="guide-buttons">
+            <a href="https://github.com/PAIN-hub/Loly_Companion/blob/main/GEMINI_API_GUIDE.md" target="_blank" rel="noopener noreferrer" class="btn btn-primary">
+              Read Gemini API Guide →
+            </a>
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="btn btn-secondary">
+              Open Google AI Studio ↗
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container footer-container">
+      <div class="footer-left">
+        <p><strong>Loly Companion</strong> — Open Source AI Agent Screen Companion & Notch Island.</p>
+        <p class="footer-sub">Created by <a href="https://github.com/PAIN-hub" target="_blank">PAIN-hub</a> • Released under MIT License</p>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/PAIN-hub/Loly_Companion" target="_blank">GitHub Repo</a>
+        <a href="https://github.com/PAIN-hub/Loly_Companion/releases">Releases</a>
+        <a href="https://github.com/PAIN-hub/Loly_Companion/blob/main/GEMINI_API_GUIDE.md">API Guide</a>
+        <a href="#downloads">Downloads</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

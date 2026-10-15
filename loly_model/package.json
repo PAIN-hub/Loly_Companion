@@ -1,0 +1,19 @@
+{
+  "name": "loly-companion",
+  "version": "1.0.0",
+  "description": "Loly - The Anime Desktop Companion for Electron",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "preview": "node -e \"const http=require('http'),fs=require('fs'),path=require('path');const server=http.createServer((req,res)=>{let file=req.url==='/'?'/preview.html':req.url;let fp=path.join(__dirname,file);fs.readFile(fp,(err,data)=>{if(err){res.writeHead(404);res.end('Not found');return;}let ext=path.extname(fp);let mime={'html':'text/html','css':'text/css','js':'application/javascript','svg':'image/svg+xml','json':'application/json'}[ext.slice(1)]||'text/plain';res.writeHead(200,{'Content-Type':mime});res.end(data);});});server.listen(3000,()=>console.log('Preview server running at http://localhost:3000'));\""
+  },
+  "keywords": [
+    "anime",
+    "companion",
+    "electron",
+    "svg",
+    "desktop-pet"
+  ],
+  "author": "",
+  "license": "MIT"
+}

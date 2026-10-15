@@ -5,7 +5,14 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
-import { chatWithGemini, verifyAgentAction } from './gemini.js';
+import {
+  chatWithGemini,
+  chatStreamWithGemini,
+  verifyAgentAction,
+  listGeminiModels,
+  SUPPORTED_GEMINI_MODELS,
+  GEMINI_DEFAULT_MODEL
+} from './gemini.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 4141;
@@ -15,7 +22,8 @@ const SOCKET_PATH = process.platform === 'win32' ? '\\\\.\\pipe\\coucou' : '/tmp
 // In-memory runtime state
 const sseClients = new Set();
 const pendingApprovals = new Map(); // id -> { approval, resolve: function }
-let inMemoryApiKey = process.env.GEMINI_API_KEY || '';
+let inMemoryApiKey = db.getSetting('gemini_api_key') || process.env.GEMINI_API_KEY || '';
+let activeSelectedModel = db.getSetting('selected_model') || GEMINI_DEFAULT_MODEL;
 let currentAgent = {
   name: 'gemini-cli',
   status: 'idle', // idle, working, waiting_approval, success, error
@@ -130,7 +138,14 @@ const MIME_TYPES = {
   '.js': 'application/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
   '.png': 'image/png',
-  '.svg': 'image/svg+xml'
+  '.svg': 'image/svg+xml',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.ogg': 'audio/ogg',
+  '.flac': 'audio/flac',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.weba': 'audio/webm'
 };
 
 // HTTP Request Handler
@@ -257,7 +272,7 @@ const server = http.createServer(async (req, res) => {
       const reply = await chatWithGemini({
         messages,
         apiKey: effectiveKey,
-        model: model || 'gemini-2.5-flash',
+        model: model || activeSelectedModel || GEMINI_DEFAULT_MODEL,
         fileData
       });
 
@@ -267,7 +282,91 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 5. Gemini Safety Verification for Agent Action
+    // 4b. Gemini Streaming Quick Chat (Server-Sent Events)
+    if (url.pathname === '/api/gemini/chat-stream' && req.method === 'POST') {
+      const { messages, model, fileData, apiKey } = await parseJsonBody();
+      if (!Array.isArray(messages) || messages.length === 0) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Messages array required' }));
+        return;
+      }
+
+      const effectiveKey = apiKey || inMemoryApiKey;
+      const lastUserMsg = messages[messages.length - 1]?.content || '';
+      db.addChatMessage('user', lastUserMsg);
+
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+      });
+
+      let fullReply = '';
+      try {
+        const stream = chatStreamWithGemini({
+          messages,
+          apiKey: effectiveKey,
+          model: model || activeSelectedModel || GEMINI_DEFAULT_MODEL,
+          fileData
+        });
+
+        for await (const chunk of stream) {
+          fullReply += chunk;
+          res.write(`data: ${JSON.stringify({ chunk, fullReply })}\n\n`);
+        }
+
+        db.addChatMessage('assistant', fullReply);
+        res.write(`data: ${JSON.stringify({ done: true, fullReply })}\n\n`);
+        res.end();
+      } catch (err) {
+        console.error('Chat stream error:', err.message);
+        res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+        res.end();
+      }
+      return;
+    }
+
+    // 5. Gemini Models List (Live from API or Curated Fallback)
+    if (url.pathname === '/api/gemini/models' && req.method === 'GET') {
+      const effectiveKey = inMemoryApiKey || process.env.GEMINI_API_KEY;
+      try {
+        const models = await listGeminiModels(effectiveKey);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          models,
+          currentModel: activeSelectedModel,
+          hasApiKey: Boolean(effectiveKey)
+        }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          models: SUPPORTED_GEMINI_MODELS,
+          currentModel: activeSelectedModel,
+          hasApiKey: Boolean(effectiveKey),
+          fallback: true
+        }));
+      }
+      return;
+    }
+
+    // 6. Set Active Model Preference
+    if (url.pathname === '/api/gemini/model' && req.method === 'POST') {
+      const { model } = await parseJsonBody();
+      if (typeof model === 'string' && model.trim()) {
+        activeSelectedModel = model.trim();
+        db.setSetting('selected_model', activeSelectedModel);
+        broadcast('model_changed', { model: activeSelectedModel });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, model: activeSelectedModel }));
+        return;
+      }
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Model identifier required' }));
+      return;
+    }
+
+    // 7. Gemini Safety Verification for Agent Action
     if (url.pathname === '/api/gemini/review-action' && req.method === 'POST') {
       const { approvalId, apiKey, model } = await parseJsonBody();
       const pending = pendingApprovals.get(approvalId);
@@ -282,7 +381,7 @@ const server = http.createServer(async (req, res) => {
         target: pending.data.target,
         details: pending.data.details,
         apiKey: apiKey || inMemoryApiKey,
-        model: model || 'gemini-2.5-flash'
+        model: model || activeSelectedModel || GEMINI_DEFAULT_MODEL
       });
 
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -290,12 +389,13 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 6. Get/Set API Key Configuration
+    // 8. Get/Set API Key Configuration
     if (url.pathname === '/api/config' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         hasApiKey: Boolean(inMemoryApiKey),
-        maskedKey: inMemoryApiKey ? `${inMemoryApiKey.slice(0, 4)}...${inMemoryApiKey.slice(-4)}` : ''
+        maskedKey: inMemoryApiKey ? `${inMemoryApiKey.slice(0, 4)}...${inMemoryApiKey.slice(-4)}` : '',
+        activeModel: activeSelectedModel
       }));
       return;
     }
@@ -304,6 +404,7 @@ const server = http.createServer(async (req, res) => {
       const { apiKey } = await parseJsonBody();
       if (typeof apiKey === 'string') {
         inMemoryApiKey = apiKey.trim();
+        db.setSetting('gemini_api_key', inMemoryApiKey);
         broadcast('config_updated', { hasApiKey: Boolean(inMemoryApiKey) });
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, hasApiKey: Boolean(inMemoryApiKey) }));
