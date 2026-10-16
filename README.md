@@ -2,7 +2,7 @@
 
 <div align="center">
 
-<img src="public/icon.png" width="96" height="96" alt="Loly Logo" />
+<img src="public/Icon.png" width="96" height="96" alt="Loly Logo" />
 
 ### An intelligent screen island & desktop companion for Windows & Linux
 *Watching over autonomous AI coding agents with the Google Gemini API, interactive cursor-tracking mascot, one-click terminal approvals, and procedural focus lo-fi beats.*
