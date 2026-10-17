@@ -28,15 +28,16 @@ An intelligent, non-intrusive desktop companion and floating notch interface des
 
 ---
 
-### Visual Overview
+## Visual Overview
 
-| Floating Hardware Notch | Real-Time Agent Tool Inspection |
-| :---: | :---: |
-| <img src="docs/screenshots/notch_preview.png" width="430" alt="Hardware Notch Interface" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> | <img src="docs/screenshots/tools_preview.png" width="430" alt="Agent Tools and Approvals" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> |
+### Floating Hardware Notch
+<img src="docs/screenshot/notch_preview.png" width="430" alt="Hardware Notch Interface" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> 
 
-<br/>
+###  Real-Time Agent Tool Inspection
+<img src="docs/screenshot/tools_preview.png" width="430" alt="Agent Tools and Approvals" style="border-radius: 8px; border: 1px solid #e2e8f0;" />
 
-<img src="docs/screenshots/chat_agent_preview.png" width="880" alt="Loly Companion Autonomous Coding Agent Interface" style="border-radius: 10px; border: 1px solid #e2e8f0;" />
+### Chat agent preview
+<img src="docs/screenshot/chat_agent_preview.png" width="880" alt="Loly Companion Autonomous Coding Agent Interface" style="border-radius: 10px; border: 1px solid #e2e8f0;" />
 
 </div>
 
@@ -49,7 +50,7 @@ When autonomous agentic systems (such as Gemini CLI, Claude Code, Antigravity, a
 **Loly Companion** establishes continuous real-time oversight via an unobtrusive screen island anchored to the top center of your display:
 
 - **Autonomous Multi-File Coding Agent**: Direct Loly to inspect, create, refactor, and execute terminal commands across local directories within verified security boundaries.
-- **In-Pill Permission Approvals**: Grant or deny terminal executions (`Allow`, `Deny`, `Always`) directly from the floating interface without switching application focus.
+- **In-Pill Permission Approvals**: Grant or deny terminal executions (`Allow`, `Deny`, `Always`) directly from the floating interface without switching pplication focus.
 - **Hybrid AI Architecture**: Seamlessly leverages on-device **Chrome Built-in AI** (Prompt API / Gemini Nano) with automatic cloud fallback to **Google Gemini 2.5 Flash** and **Gemini 2.5 Pro**.
 - **Offline Audio Storage**: Procedural ambient synthesizer and Lo-Fi workstation running locally via IndexedDB with full support for importing personal audio libraries.
 - **Complete Data Sovereignty**: All audit logs, file diffs, and chat sessions are stored locally in an isolated SQLite database (`~/.loly/loly.db`). Zero telemetry or external tracking.
