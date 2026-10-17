@@ -58,6 +58,21 @@
 
         <!-- Pill Window Controls -->
         <div class="pill-controls">
+          <button class="pill-btn burger-pill-btn" id="notchBurgerBtn" title="Tools & Agent Options">
+            <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </button>
+          <button class="pill-btn voice-wake-btn" id="voiceWakeBtn" title="Voice Wake & Commands: Say 'Hey Loly'">
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+              <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              <line x1="12" y1="19" x2="12" y2="23"/>
+              <line x1="8" y1="23" x2="16" y2="23"/>
+            </svg>
+          </button>
           <button class="pill-btn electron-only" id="minimizeAppBtn" title="Minimize">
             <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor"><path d="M2 8h12v2H2z"/></svg>
           </button>
@@ -68,6 +83,7 @@
             <svg viewBox="0 0 16 16" width="10" height="10" fill="currentColor"><path d="M3.7 3l4.3 4.3 4.3-4.3 1.4 1.4-4.3 4.3 4.3 4.3-1.4 1.4-4.3-4.3-4.3 4.3-1.4-1.4 4.3-4.3-4.3-4.3z"/></svg>
           </button>
         </div>
+        <div class="island-peek-handle" id="islandPeekHandle" title="Move cursor here or click to wake Loly"></div>
       </div>
 
       <!-- ===================================================================
@@ -125,6 +141,15 @@
         <div class="island-view-stage active" id="viewChat">
           <!-- Mascot Character on the Left (Automatic reaction, cursor eye tracking) -->
           <div class="mascot-stage-box" id="mascotStageBox">
+            <!-- Floating Animated Formatted Speech Bubble above Loly's Head -->
+            <div class="mascot-speech-bubble" id="mascotSpeechBubble" style="display: none;">
+              <div class="speech-bubble-header">
+                <span class="bubble-pulse-dot"></span>
+                <span>Loly</span>
+              </div>
+              <div class="speech-bubble-text" id="mascotSpeechText">Ready to code!</div>
+              <span class="speech-bubble-tail"></span>
+            </div>
             <div class="character-wrapper" id="characterWrapper">
               <!-- Inlined Anime Mascot Vector SVG from loly_model -->
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" id="loly-svg" class="loly-svg" role="img" aria-label="Loly anime companion">
@@ -305,50 +330,123 @@
                 </g>
               </svg>
             </div>
+            <div class="mascot-caption-bar" id="mascotCaptionBar" title="Loly Companion Status">
+              <span class="caption-mood-dot" id="captionMoodDot"></span>
+              <span id="mascotCaptionMood">Loly • Ready</span>
+            </div>
           </div>
 
-          <!-- Right Content: Input Capsule with Agent Badge and Send Button -->
+          <!-- Right Content: Chat Capsules, Bubbles Stream & Coding Agent Controls -->
           <div class="chat-capsule-container">
             <div class="capsule-header-row">
               <span class="active-agent-pill" id="activeAgentPill">
                 <span class="agent-live-dot"></span>
-                <span id="agentNameLabel">claude-code</span>
-                <span class="agent-sep">:</span>
+                <span id="agentNameLabel">Loly-Agent</span>
+                <span class="agent-sep">•</span>
+                <span class="agent-mode-mini-tag" id="agentModeMiniTag">Coding Agent</span>
               </span>
 
-              <!-- Model Selector directly in the Chat Interface -->
-              <div class="chat-model-capsule" id="chatModelCapsule" title="Switch Gemini Model">
-                <svg class="model-select-icon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/>
+              <!-- Dot Burger Menu Button on Far Right -->
+              <button type="button" class="btn-dot-burger" id="btnChatMenuToggle" title="Tools & Models Menu">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                  <circle cx="12" cy="5" r="2.2"/>
+                  <circle cx="12" cy="12" r="2.2"/>
+                  <circle cx="12" cy="19" r="2.2"/>
                 </svg>
-                <select id="chatModelSelect" class="chat-model-select" aria-label="Select AI Model">
-                  <option value="gemini-3.5-flash" selected>Gemini 3.5 Flash (Fast, Recommended)</option>
-                  <option value="gemini-3.8-flash">Gemini 3.8 Flash (Latest Flagship)</option>
-                  <option value="gemini-3.7-flash">Gemini 3.7 Flash</option>
-                  <option value="gemini-3.6-flash">Gemini 3.6 Flash</option>
-                  <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
-                  <option value="gemini-3.1-pro-preview">Gemini 3.1 Pro Preview</option>
-                  <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
-                  <option value="gemini-3-flash-preview">Gemini 3 Flash Preview</option>
-                  <option value="antigravity-preview-latest">Antigravity Preview</option>
+              </button>
+            </div>
+
+            <!-- Floating Dot Burger Options Dropdown Menu (Anchored to Right) -->
+            <div class="chat-header-dropdown" id="chatHeaderDropdown" style="display: none;">
+              <div class="dropdown-header">
+                <span>Tools & Engine Controls</span>
+                <button type="button" class="btn-close-dropdown" id="btnCloseChatDropdown">&times;</button>
+              </div>
+
+              <!-- Option 1: Autonomous Coding Agent Toggle -->
+              <div class="dropdown-item">
+                <div class="dropdown-item-info">
+                  <span class="dropdown-item-title">Autonomous Coding Agent</span>
+                  <span class="dropdown-item-desc">Multi-file codebase editor & terminal runner</span>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" id="dropdownAgentModeToggle" checked>
+                  <span class="toggle-slider"></span>
+                </label>
+              </div>
+
+              <!-- Option 2: Model & Engine Selection (Reduced Essential Models) -->
+              <div class="dropdown-item">
+                <div class="dropdown-item-info">
+                  <span class="dropdown-item-title">Active AI Model</span>
+                  <span class="dropdown-item-desc">On-device Nano or Cloud Gemini</span>
+                </div>
+                <select id="dropdownModelSelect" class="dropdown-select-box">
+                  <option value="chrome-builtin-only">⚡ Chrome Built-in AI (Prompt API On-Device Only)</option>
+                  <option value="chrome-builtin-auto" selected>⚡ Chrome Built-in AI (Auto Fallback)</option>
+                  <option value="gemini-2.5-flash">☁️ Gemini 2.5 Flash (Fast)</option>
+                  <option value="gemini-2.5-pro">☁️ Gemini 2.5 Pro (Deep Reasoning)</option>
+                  <option value="gemini-3.5-flash">☁️ Gemini 3.5 Flash</option>
                 </select>
-                <button type="button" class="btn-refresh-models" id="btnRefreshModels" title="Refresh Live Models from API">
-                  <svg viewBox="0 0 24 24" width="10" height="10" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 4 23 10 17 10"/>
-                    <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                  </svg>
-                </button>
+              </div>
+
+              <!-- Option 3: Target Workspace Directory -->
+              <div class="dropdown-item">
+                <div class="dropdown-item-info">
+                  <span class="dropdown-item-title">Code Workspace</span>
+                  <span class="dropdown-item-desc" id="dropdownWorkspaceLabel">Loly_Companion</span>
+                </div>
+                <button type="button" class="btn btn-subtle-sm" id="btnDropdownWorkspace">Switch Folder</button>
+              </div>
+
+              <!-- Hidden proxy elements to ensure all existing JS bindings work seamlessly -->
+              <div style="display: none !important;">
+                <select id="chatModelSelect">
+                  <option value="chrome-builtin-only">Chrome Built-in AI Only</option>
+                  <option value="chrome-builtin-auto" selected>Chrome Built-in AI Auto</option>
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                  <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                  <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                </select>
+                <button id="btnAgentModeToggle"></button>
+                <span id="agentModeText">Coding Agent</span>
+                <button id="btnWorkspacePill"></button>
+                <span id="workspaceDirLabel">Loly_Companion</span>
+                <div id="aiEngineBadge"><span id="engineLabel">Auto AI</span></div>
+                <button id="btnRefreshModels"></button>
               </div>
             </div>
 
-            <!-- The Unified Input Box (matching Image 1) -->
-            <div class="capsule-input-box">
-              <input type="text" id="chatInput" placeholder="Ask me anything..." autocomplete="off" />
-              <button type="button" class="btn-send-round" id="btnSendChat" title="Send message">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="12" y1="19" x2="12" y2="5"/>
-                  <polyline points="5 12 12 5 19 12"/>
-                </svg>
+            <!-- Scrollable Chat Bubbles Stream -->
+            <div class="chat-bubbles-stream" id="chatBubblesStream">
+              <div class="chat-bubble bubble-loly initial-welcome">
+                <div class="bubble-avatar-mini">
+                  <svg viewBox="100 60 200 240" width="18" height="18"><use href="#loly-head" /></svg>
+                </div>
+                <div class="bubble-content">
+                  <div class="bubble-header-name">Loly Companion</div>
+                  <div class="bubble-text">Hi! I'm Loly. I can edit code across files in your project, run shell commands, or chat with you. What are we building today?</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Suggestion Chips Row -->
+            <div class="chat-suggestions-row" id="chatSuggestionsRow">
+              <button type="button" class="suggestion-chip" data-prompt="Scan the codebase and summarize project structure">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <span>Scan codebase</span>
+              </button>
+              <button type="button" class="suggestion-chip" data-prompt="Verify and list files in workspace folder">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                <span>List files</span>
+              </button>
+              <button type="button" class="suggestion-chip" data-prompt="Run test suite and check health">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 2v7.5L5.5 19a2 2 0 0 0 1.8 2.8h9.4a2 2 0 0 0 1.8-2.8L14 9.5V2h-4z"/><line x1="8.5" y1="2" x2="15.5" y2="2"/></svg>
+                <span>Run test</span>
+              </button>
+              <button type="button" class="suggestion-chip" data-prompt="Fix launcher and make app self-contained">
+                <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                <span>Self-contained</span>
               </button>
             </div>
 
@@ -358,9 +456,15 @@
               <button type="button" class="btn-remove-attachment" id="btnRemoveAttachment">&times;</button>
             </div>
 
-            <!-- Recent Chat Dialogue / Agent Response Box -->
-            <div class="chat-dialogue-popup" id="chatDialoguePopup" style="display: none;">
-              <div class="dialogue-inner" id="dialogueInner"></div>
+            <!-- The Unified Input Box -->
+            <div class="capsule-input-box">
+              <input type="text" id="chatInput" placeholder="Ask Loly or instruct coding agent..." autocomplete="off" />
+              <button type="button" class="btn-send-round" id="btnSendChat" title="Send message or run agent">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="19" x2="12" y2="5"/>
+                  <polyline points="5 12 12 5 19 12"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>
@@ -499,11 +603,21 @@
 
                   <!-- Playback controls -->
                   <div class="music-playback-controls">
-                    <button class="player-btn" id="fullShuffleBtn" title="Shuffle">🔀</button>
-                    <button class="player-btn" id="fullPrevBtn" title="Previous">⏮</button>
-                    <button class="player-btn main-play-btn" id="fullPlayBtn" title="Play/Pause">▶</button>
-                    <button class="player-btn" id="fullNextBtn" title="Next">⏭</button>
-                    <button class="player-btn" id="fullRepeatBtn" title="Repeat">🔁</button>
+                    <button class="player-btn" id="fullShuffleBtn" title="Shuffle">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 3 21 3 21 8"/><line x1="4" y1="20" x2="21" y2="3"/><polyline points="21 16 21 21 16 21"/><line x1="15" y1="15" x2="21" y2="21"/><line x1="4" y1="4" x2="9" y2="9"/></svg>
+                    </button>
+                    <button class="player-btn" id="fullPrevBtn" title="Previous">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polygon points="19 20 9 12 19 4 19 20"/><line x1="5" y1="19" x2="5" y2="5"/></svg>
+                    </button>
+                    <button class="player-btn main-play-btn" id="fullPlayBtn" title="Play/Pause">
+                      <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    </button>
+                    <button class="player-btn" id="fullNextBtn" title="Next">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" y1="5" x2="19" y2="19"/></svg>
+                    </button>
+                    <button class="player-btn" id="fullRepeatBtn" title="Repeat">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    </button>
                   </div>
 
                   <div class="volume-control-row">
@@ -518,8 +632,14 @@
                   <div class="storage-picker-actions">
                     <input type="file" id="internalStorageInput" accept="audio/*, .mp3, .wav, .ogg, .flac, .m4a, .aac" multiple class="file-input-hidden" />
                     <input type="file" id="internalStorageFolderInput" webkitdirectory directory multiple class="file-input-hidden" />
-                    <button type="button" class="btn btn-primary" id="btnSelectFiles">📂 Select Audio from Storage</button>
-                    <button type="button" class="btn btn-outline" id="btnSelectFolder">📁 Add Folder</button>
+                    <button type="button" class="btn btn-primary" id="btnSelectFiles">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                      <span>Select Audio</span>
+                    </button>
+                    <button type="button" class="btn btn-outline" id="btnSelectFolder">
+                      <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+                      <span>Add Folder</span>
+                    </button>
                     <button type="button" class="btn btn-subtle" id="btnClearPlaylist">Clear Library</button>
                   </div>
 

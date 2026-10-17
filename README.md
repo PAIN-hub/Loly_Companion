@@ -16,6 +16,22 @@
 
 **[🌐 Official Website & Live Web Simulator](https://pain-hub.github.io/Loly_Companion/)** • **[📦 Download Releases](#-downloads--releases)** • **[🔑 Gemini API Guide](GEMINI_API_GUIDE.md)** • **[📖 Quickstart](#-how-to-run-locally)**
 
+<br/>
+
+<div align="center">
+
+### 🖥️ Hardware Notch & Autonomous Coding Agent UI (v2.0.0)
+
+| Collapsed Screen Notch | Expanded Agent Tools |
+| :---: | :---: |
+| <img src="docs/screenshots/notch_preview.png" width="380" alt="Hardware Notch" /> | <img src="docs/screenshots/tools_preview.png" width="380" alt="Agent Tools Integration" /> |
+
+<br/>
+
+<img src="docs/screenshots/chat_agent_preview.png" width="760" alt="Loly Companion Chat & Autonomous Coding Agent" />
+
+</div>
+
 </div>
 
 ---
@@ -48,20 +64,20 @@ As autonomous coding agents (**Gemini CLI**, **Claude Code**, **Antigravity**, *
 
 ---
 
-## 📦 Downloads & Releases
+## 📦 Downloads & Releases (v2.0.0)
 
-Loly Companion provides standalone production binaries for both **Windows** and **Linux**. You can download them directly from the [GitHub Releases page](https://github.com/PAIN-hub/Loly_Companion/releases/tag/v1.0.0) or use the links below:
+Loly Companion v2 provides standalone production binaries for **Windows**, **Linux**, and **macOS**. You can download them directly from the [GitHub Releases page](https://github.com/PAIN-hub/Loly_Companion/releases/tag/v2.0.0) or use the links below:
 
 ### 🪟 Windows (64-bit)
 
 | Package | File Name | Size | Description |
 |---|---|---|---|
-| **Portable (.exe)** | [`Loly-1.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/Loly-1.0.0.exe) | ~95 MB | **Zero Installation**: Double-click to run immediately on any Windows 10/11 system. |
-| **Setup Installer (.exe)** | [`Loly-Setup-1.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/Loly-Setup-1.0.0.exe) | ~95 MB | Full desktop NSIS installer with desktop shortcut and Start Menu entry. |
-| **Zipped Archive (.zip)** | [`loly-windows-package.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/loly-windows-package.zip) | ~25 MB | Zipped package with all runtime dependencies. |
+| **Portable (.exe)** | [`Loly-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.exe) | ~95 MB | **Zero Installation**: Double-click to run immediately on any Windows 10/11 system. |
+| **Setup Installer (.exe)** | [`Loly-Setup-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-Setup-2.0.0.exe) | ~95 MB | Full desktop NSIS installer with desktop shortcut and Start Menu entry. |
+| **Zipped Archive (.zip)** | [`loly-windows-package.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly-windows-package.zip) | ~25 MB | Zipped package with all runtime dependencies. |
 
 > **How to run on Windows**:
-> 1. Download `Loly-1.0.0.exe`.
+> 1. Download `Loly-2.0.0.exe`.
 > 2. Double-click to launch.
 > 3. Loly appears as a floating transparent island at the top of your screen. Toggle visibility anytime with `Ctrl + Shift + L`.
 
@@ -71,19 +87,27 @@ Loly Companion provides standalone production binaries for both **Windows** and 
 
 | Package | File Name | Size | Description |
 |---|---|---|---|
-| **Universal AppImage** | [`Loly-1.0.0.AppImage`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/Loly-1.0.0.AppImage) | ~120 MB | **Works on all distros**: Ubuntu 22.04/24.04+, Debian, Kali, Fedora, Arch, with or without `libfuse2`. |
-| **Debian / Ubuntu (.deb)** | [`loly_1.0.0_amd64.deb`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/loly_1.0.0_amd64.deb) | ~95 MB | Native Debian package. Integrates into your application menu. |
-| **Portable Tarball** | [`loly-linux-x64.tar.gz`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v1.0.0/loly-linux-x64.tar.gz) | ~117 MB | Standalone portable archive. Extract and run `./loly`. |
+| **Universal AppImage** | [`Loly-2.0.0.AppImage`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.AppImage) | ~120 MB | **Works on all distros**: Ubuntu 22.04/24.04+, Debian, Kali, Fedora, Arch, with or without `libfuse2`. |
+| **Debian / Ubuntu (.deb)** | [`loly_2.0.0_amd64.deb`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly_2.0.0_amd64.deb) | ~95 MB | Native Debian package. Integrates into your application menu. |
+| **Portable Tarball** | [`loly-linux-x64.tar.gz`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly-linux-x64.tar.gz) | ~117 MB | Standalone portable archive. Extract and run `./loly`. |
 
 > **How to run on Linux**:
 > ```bash
 > # Make the AppImage executable and launch:
-> chmod +x Loly-1.0.0.AppImage
-> ./Loly-1.0.0.AppImage
+> chmod +x Loly-2.0.0.AppImage
+> ./Loly-2.0.0.AppImage
 > 
 > # Or install via dpkg on Debian/Ubuntu/Kali:
-> sudo dpkg -i loly_1.0.0_amd64.deb
+> sudo dpkg -i loly_2.0.0_amd64.deb
 > ```
+
+---
+
+### 🍎 macOS (Apple Silicon & Intel)
+
+| Package | File Name | Size | Description |
+|---|---|---|---|
+| **macOS Bundle (.zip)** | [`Loly-2.0.0-mac.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0-mac.zip) | ~95 MB | Standalone macOS application bundle. Unzip and drag `Loly.app` into Applications. |
 
 ---
 

@@ -18,7 +18,14 @@ function resolveDbPath() {
         fs.mkdirSync(dataDir, { recursive: true });
       } catch (_) {}
     }
-    return path.join(dataDir, 'loly.db');
+    const targetDb = path.join(dataDir, 'loly.db');
+    const localDb = path.join(__dirname, 'loly.db');
+    if (!fs.existsSync(targetDb) && fs.existsSync(localDb)) {
+      try {
+        fs.copyFileSync(localDb, targetDb);
+      } catch (_) {}
+    }
+    return targetDb;
   }
   return path.join(__dirname, 'loly.db');
 }

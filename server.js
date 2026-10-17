@@ -11,13 +11,29 @@ import {
   verifyAgentAction,
   listGeminiModels,
   SUPPORTED_GEMINI_MODELS,
-  GEMINI_DEFAULT_MODEL
+  GEMINI_DEFAULT_MODEL,
+  resolveCloudModel
 } from './gemini.js';
+import { runCodingAgent, getWorkspaceDir, setWorkspaceDir } from './agent.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 4141;
 const HOST = '127.0.0.1';
 const SOCKET_PATH = process.platform === 'win32' ? '\\\\.\\pipe\\coucou' : '/tmp/coucou.sock';
+
+function getPublicDir() {
+  const localPublic = path.join(__dirname, 'public');
+  if (fs.existsSync(localPublic)) {
+    return localPublic;
+  }
+  if (process.resourcesPath) {
+    const asarPublic = path.join(process.resourcesPath, 'app.asar', 'public');
+    if (fs.existsSync(asarPublic)) return asarPublic;
+    const unpackedPublic = path.join(process.resourcesPath, 'public');
+    if (fs.existsSync(unpackedPublic)) return unpackedPublic;
+  }
+  return localPublic;
+}
 
 // In-memory runtime state
 const sseClients = new Set();
@@ -272,7 +288,7 @@ const server = http.createServer(async (req, res) => {
       const reply = await chatWithGemini({
         messages,
         apiKey: effectiveKey,
-        model: model || activeSelectedModel || GEMINI_DEFAULT_MODEL,
+        model: resolveCloudModel(model || activeSelectedModel || GEMINI_DEFAULT_MODEL),
         fileData
       });
 
@@ -307,7 +323,7 @@ const server = http.createServer(async (req, res) => {
         const stream = chatStreamWithGemini({
           messages,
           apiKey: effectiveKey,
-          model: model || activeSelectedModel || GEMINI_DEFAULT_MODEL,
+          model: resolveCloudModel(model || activeSelectedModel || GEMINI_DEFAULT_MODEL),
           fileData
         });
 
@@ -323,6 +339,95 @@ const server = http.createServer(async (req, res) => {
         console.error('Chat stream error:', err.message);
         res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
         res.end();
+      }
+      return;
+    }
+
+    // 4c. Autonomous AI Coding Agent Runner (Multi-file code editing & tools)
+    if (url.pathname === '/api/agent/run' && req.method === 'POST') {
+      const { prompt, history, model, apiKey, workspaceDir } = await parseJsonBody();
+      if (!prompt) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Prompt is required' }));
+        return;
+      }
+
+      if (workspaceDir) {
+        setWorkspaceDir(workspaceDir);
+      }
+
+      const effectiveKey = apiKey || inMemoryApiKey;
+      db.addChatMessage('user', prompt);
+
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no'
+      });
+
+      try {
+        currentAgent.name = 'Loly-Agent';
+        currentAgent.status = 'working';
+        currentAgent.tickerText = `Coding Agent: ${prompt.slice(0, 35)}...`;
+        broadcast('agent_status', currentAgent);
+
+        const result = await runCodingAgent({
+          prompt,
+          history: Array.isArray(history) ? history : [],
+          apiKey: effectiveKey,
+          model: resolveCloudModel(model || activeSelectedModel || GEMINI_DEFAULT_MODEL),
+          onStep: (step) => {
+            // Stream each tool step to client in real-time
+            res.write(`data: ${JSON.stringify({ step })}\n\n`);
+            if (step.type === 'tool_call') {
+              broadcast('agent_activity', {
+                agent: 'Loly-Agent',
+                action: step.name,
+                target: JSON.stringify(step.args)
+              });
+            }
+          }
+        });
+
+        db.addChatMessage('assistant', result.reply);
+        currentAgent.status = 'success';
+        currentAgent.tickerText = 'All coding tasks completed!';
+        broadcast('agent_status', currentAgent);
+
+        res.write(`data: ${JSON.stringify({ done: true, reply: result.reply, toolExecutions: result.toolExecutions })}\n\n`);
+        res.end();
+      } catch (err) {
+        console.error('Agent execution error:', err);
+        currentAgent.status = 'error';
+        currentAgent.tickerText = `Error: ${err.message}`;
+        broadcast('agent_status', currentAgent);
+
+        res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`);
+        res.end();
+      }
+      return;
+    }
+
+    // 4d. Workspace Directory Information & Management
+    if (url.pathname === '/api/agent/workspace' && req.method === 'GET') {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        workspace: getWorkspaceDir(),
+        cwd: process.cwd()
+      }));
+      return;
+    }
+
+    if (url.pathname === '/api/agent/workspace' && req.method === 'POST') {
+      const { workspaceDir } = await parseJsonBody();
+      const updated = setWorkspaceDir(workspaceDir);
+      if (updated) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, workspace: updated }));
+      } else {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Directory does not exist or invalid' }));
       }
       return;
     }
@@ -389,29 +494,39 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
-    // 8. Get/Set API Key Configuration
+    // 8. Get/Set API Key Configuration & Island Preferences
     if (url.pathname === '/api/config' && req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         hasApiKey: Boolean(inMemoryApiKey),
         maskedKey: inMemoryApiKey ? `${inMemoryApiKey.slice(0, 4)}...${inMemoryApiKey.slice(-4)}` : '',
-        activeModel: activeSelectedModel
+        activeModel: activeSelectedModel,
+        autohideSeconds: db.getSetting('autohide_seconds') !== null ? Number(db.getSetting('autohide_seconds')) : 30,
+        voiceWakeEnabled: db.getSetting('voice_wake_enabled') !== 'false'
       }));
       return;
     }
 
     if (url.pathname === '/api/config' && req.method === 'POST') {
-      const { apiKey } = await parseJsonBody();
+      const { apiKey, autohideSeconds, voiceWakeEnabled } = await parseJsonBody();
       if (typeof apiKey === 'string') {
         inMemoryApiKey = apiKey.trim();
         db.setSetting('gemini_api_key', inMemoryApiKey);
         broadcast('config_updated', { hasApiKey: Boolean(inMemoryApiKey) });
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, hasApiKey: Boolean(inMemoryApiKey) }));
-        return;
       }
-      res.writeHead(400, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ error: 'Invalid apiKey parameter' }));
+      if (typeof autohideSeconds !== 'undefined') {
+        db.setSetting('autohide_seconds', Number(autohideSeconds));
+      }
+      if (typeof voiceWakeEnabled !== 'undefined') {
+        db.setSetting('voice_wake_enabled', Boolean(voiceWakeEnabled));
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        success: true,
+        hasApiKey: Boolean(inMemoryApiKey),
+        autohideSeconds: db.getSetting('autohide_seconds') !== null ? Number(db.getSetting('autohide_seconds')) : 30,
+        voiceWakeEnabled: db.getSetting('voice_wake_enabled') !== 'false'
+      }));
       return;
     }
 
@@ -510,10 +625,11 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'GET' || req.method === 'HEAD') {
       let reqPath = url.pathname === '/' ? '/index.html' : url.pathname;
       const safePath = path.normalize(reqPath).replace(/^(\.\.[\/\\])+/, '');
-      const filePath = path.join(__dirname, 'public', safePath);
+      const publicDir = path.resolve(getPublicDir());
+      const filePath = path.resolve(publicDir, safePath.startsWith(path.sep) ? safePath.slice(1) : safePath);
 
       // Verify boundary
-      if (!filePath.startsWith(path.join(__dirname, 'public'))) {
+      if (!filePath.startsWith(publicDir)) {
         res.writeHead(403, { 'Content-Type': 'text/plain' });
         res.end('Access denied');
         return;
@@ -529,7 +645,15 @@ const server = http.createServer(async (req, res) => {
           res.end();
           return;
         }
-        fs.createReadStream(filePath).pipe(res);
+        fs.readFile(filePath, (readErr, data) => {
+          if (readErr) {
+            console.error('Error reading file:', filePath, readErr);
+            res.writeHead(500, { 'Content-Type': 'text/plain' });
+            res.end('Error reading asset');
+            return;
+          }
+          res.end(data);
+        });
         return;
       }
     }
@@ -601,18 +725,31 @@ function setupUnixSocketServer() {
 }
 
 // Start HTTP Server
-server.on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.log(`[Loly Server] Port ${PORT} already active. Reusing running daemon instance.`);
-  } else {
-    console.error('[Loly Server Error]:', err);
-  }
-});
+let serverStartedPromise = null;
+export function startServer() {
+  if (serverStartedPromise) return serverStartedPromise;
+  serverStartedPromise = new Promise((resolve) => {
+    server.once('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.log(`[Loly Server] Port ${PORT} already active. Reusing running daemon instance.`);
+        resolve({ port: PORT, host: HOST, reused: true });
+      } else {
+        console.error('[Loly Server Error]:', err);
+        resolve({ port: PORT, host: HOST, error: err });
+      }
+    });
 
-server.listen(PORT, HOST, () => {
-  console.log(`=======================================================`);
-  console.log(`  Loly - AI Coding Agent Desktop Companion & Island   `);
-  console.log(`  HTTP Web Server: http://${HOST}:${PORT}              `);
-  console.log(`=======================================================`);
-  setupUnixSocketServer();
-});
+    server.listen(PORT, HOST, () => {
+      console.log(`=======================================================`);
+      console.log(`  Loly - AI Coding Agent Desktop Companion & Island   `);
+      console.log(`  HTTP Web Server: http://${HOST}:${PORT}              `);
+      console.log(`=======================================================`);
+      setupUnixSocketServer();
+      resolve({ port: PORT, host: HOST, reused: false });
+    });
+  });
+  return serverStartedPromise;
+}
+
+// Auto-start for daemon and direct CLI usage
+startServer();

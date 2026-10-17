@@ -1,6 +1,6 @@
 {
   "name": "loly",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A desktop companion for Windows & Linux keeping an eye on AI coding agents with Gemini API integration",
   "homepage": "https://pain-hub.github.io/Loly_Companion/",
   "repository": {
@@ -18,10 +18,13 @@
     "desktop": "google-chrome --app=http://127.0.0.1:4141 --window-size=860,640 --window-position=530,20",
     "electron": "electron .",
     "app:linux": "./dist/linux-unpacked/loly",
-    "dist": "electron-builder --linux AppImage deb && node scripts/fix-appimage.js",
+    "clean": "rm -rf dist",
+    "dist": "electron-builder",
     "dist:linux": "electron-builder --linux AppImage deb && node scripts/fix-appimage.js",
     "dist:win": "electron-builder --win portable nsis",
-    "dist:all": "electron-builder --linux AppImage deb --win portable nsis && node scripts/fix-appimage.js"
+    "dist:mac": "electron-builder --mac zip",
+    "dist:all": "electron-builder --linux AppImage deb --win portable nsis --mac zip && node scripts/fix-appimage.js",
+    "dist:fresh": "npm run clean && npm run dist:linux"
   },
   "build": {
     "appId": "com.loly.app",
@@ -36,6 +39,7 @@
       "server.js",
       "db.js",
       "gemini.js",
+      "agent.js",
       "public/**/*",
       "hooks/**/*"
     ],
@@ -54,6 +58,13 @@
         "nsis"
       ],
       "icon": "public/icon.png"
+    },
+    "mac": {
+      "target": [
+        "zip"
+      ],
+      "icon": "public/icon.png",
+      "category": "public.app-category.developer-tools"
     }
   },
   "keywords": [

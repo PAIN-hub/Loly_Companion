@@ -386,10 +386,10 @@
     async addTrack(file) {
       if (!this.db) await this.init();
       const track = {
-        name: file.name.replace(/\.[^/.]+$/, ""),
-        fileName: file.name,
+        name: file.name ? file.name.replace(/\.[^/.]+$/, "") : (file.fileName ? file.fileName.replace(/\.[^/.]+$/, "") : 'Track'),
+        fileName: file.fileName || file.name || 'track.mp3',
         type: file.type || 'audio/mpeg',
-        blob: file,
+        blob: file.blob || file,
         addedAt: Date.now()
       };
       return new Promise((resolve, reject) => {
@@ -516,15 +516,47 @@
       // Pickers
       const btnFiles = document.getElementById('btnSelectFiles');
       const inputFiles = document.getElementById('internalStorageInput');
-      if (btnFiles && inputFiles) {
-        btnFiles.addEventListener('click', () => inputFiles.click());
+      if (btnFiles) {
+        btnFiles.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (window.desktopAPI && window.desktopAPI.selectAudioFiles) {
+            try {
+              const files = await window.desktopAPI.selectAudioFiles();
+              if (files && files.length) {
+                await this._handleNativeFiles(files);
+                return;
+              }
+            } catch (err) {
+              console.warn('[Audio Player] Native file dialog error:', err);
+            }
+          }
+          if (inputFiles) inputFiles.click();
+        });
+      }
+      if (inputFiles) {
         inputFiles.addEventListener('change', (e) => this._handleFilesSelected(e.target.files));
       }
 
       const btnFolder = document.getElementById('btnSelectFolder');
       const inputFolder = document.getElementById('internalStorageFolderInput');
-      if (btnFolder && inputFolder) {
-        btnFolder.addEventListener('click', () => inputFolder.click());
+      if (btnFolder) {
+        btnFolder.addEventListener('click', async (e) => {
+          e.preventDefault();
+          if (window.desktopAPI && window.desktopAPI.selectAudioFolder) {
+            try {
+              const files = await window.desktopAPI.selectAudioFolder();
+              if (files && files.length) {
+                await this._handleNativeFiles(files);
+                return;
+              }
+            } catch (err) {
+              console.warn('[Audio Player] Native folder dialog error:', err);
+            }
+          }
+          if (inputFolder) inputFolder.click();
+        });
+      }
+      if (inputFolder) {
         inputFolder.addEventListener('change', (e) => this._handleFilesSelected(e.target.files));
       }
 
@@ -562,6 +594,31 @@
       if (this.audioElem) this.audioElem.volume = this.volume;
       if (this.volSlider) this.volSlider.value = Math.round(this.volume * 100);
       if (this.volText) this.volText.textContent = `${Math.round(this.volume * 100)}%`;
+    }
+
+    async _handleNativeFiles(nativeFiles) {
+      if (!nativeFiles || !nativeFiles.length) return;
+      for (const item of nativeFiles) {
+        try {
+          const dataUrl = item.base64 || item.dataUrl;
+          if (!dataUrl) continue;
+          const res = await fetch(dataUrl);
+          const blob = await res.blob();
+          await this.db.addTrack({
+            name: item.name ? item.name.replace(/\.[^/.]+$/, "") : 'Track',
+            fileName: item.name,
+            type: item.type || 'audio/mpeg',
+            blob,
+            size: item.size
+          });
+        } catch (err) {
+          console.warn('[Audio Player] Failed adding track from base64:', item.name, err);
+        }
+      }
+      await this.loadLibrary();
+      if (!this.isPlaying && this.tracks.length) {
+        this.playTrack(0);
+      }
     }
 
     async _handleFilesSelected(files) {
@@ -893,17 +950,314 @@
     }
 
     // =========================================================================
-    // 6. CHAT INPUT & AUTOMATIC MASCOT REACTION
+    // 6. CHAT BUBBLES, SPEECH BUBBLE & AUTONOMOUS CODING AGENT RUNNER
     // =========================================================================
 
     const chatInput = document.getElementById('chatInput');
     const btnSendChat = document.getElementById('btnSendChat');
-    const chatPopup = document.getElementById('chatDialoguePopup');
-    const dialogueInner = document.getElementById('dialogueInner');
+    const chatBubblesStream = document.getElementById('chatBubblesStream');
+    const mascotSpeechBubble = document.getElementById('mascotSpeechBubble');
+    const mascotSpeechText = document.getElementById('mascotSpeechText');
+    const btnAgentModeToggle = document.getElementById('btnAgentModeToggle');
+    const btnWorkspacePill = document.getElementById('btnWorkspacePill');
+    const workspaceDirLabel = document.getElementById('workspaceDirLabel');
+
+    let isAgentMode = true;
+    let speechBubbleTimer = null;
     const chatHistory = [];
 
+    function escapeHtml(str) {
+      if (typeof str !== 'string') return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function showMascotSpeech(text, durationMs = 4500) {
+      if (!mascotSpeechBubble || !mascotSpeechText) return;
+      if (speechBubbleTimer) clearTimeout(speechBubbleTimer);
+
+      mascotSpeechText.textContent = text;
+
+      const moodLabel = document.getElementById('mascotCaptionMood');
+      const moodDot = document.getElementById('captionMoodDot');
+      if (moodLabel) {
+        const shortStatus = text.length > 28 ? `${text.slice(0, 26)}...` : text;
+        moodLabel.textContent = shortStatus;
+      }
+      if (moodDot) {
+        moodDot.classList.add('pulse');
+        setTimeout(() => {
+          if (moodDot) moodDot.classList.remove('pulse');
+        }, 1200);
+      }
+
+      mascotSpeechBubble.classList.remove('caption-pop');
+      void mascotSpeechBubble.offsetWidth;
+      mascotSpeechBubble.classList.add('caption-pop');
+      mascotSpeechBubble.style.display = 'block';
+
+      speechBubbleTimer = setTimeout(() => {
+        if (mascotSpeechBubble) {
+          mascotSpeechBubble.style.display = 'none';
+          mascotSpeechBubble.classList.remove('caption-pop');
+        }
+        if (moodLabel) moodLabel.textContent = 'Loly • Ready';
+      }, durationMs);
+    }
+
+    function appendUserBubble(text) {
+      if (!chatBubblesStream) return;
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble bubble-user';
+      bubble.innerHTML = `
+        <div class="bubble-content">
+          <div class="bubble-header-name">You</div>
+          <div class="bubble-text">${escapeHtml(text)}</div>
+        </div>
+      `;
+      chatBubblesStream.appendChild(bubble);
+      chatBubblesStream.scrollTop = chatBubblesStream.scrollHeight;
+    }
+
+    function appendLolyBubble() {
+      if (!chatBubblesStream) return null;
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble bubble-loly';
+      bubble.innerHTML = `
+        <div class="bubble-avatar-mini">
+          <svg viewBox="100 60 200 240" width="16" height="16"><use href="#loly-head" /></svg>
+        </div>
+        <div class="bubble-content">
+          <div class="bubble-header-name">Loly Companion</div>
+          <div class="agent-steps-list" style="display: none;"></div>
+          <div class="bubble-text">Thinking...</div>
+        </div>
+      `;
+      chatBubblesStream.appendChild(bubble);
+      chatBubblesStream.scrollTop = chatBubblesStream.scrollHeight;
+
+      const textEl = bubble.querySelector('.bubble-text');
+      const stepsList = bubble.querySelector('.agent-steps-list');
+
+      return {
+        bubble,
+        textEl,
+        stepsList,
+        setText: (txt) => {
+          textEl.textContent = txt;
+          chatBubblesStream.scrollTop = chatBubblesStream.scrollHeight;
+        },
+        addToolStep: (step) => {
+          stepsList.style.display = 'flex';
+          const item = document.createElement('div');
+          item.className = 'tool-step-item';
+
+          const svgIcon = {
+            list_files: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>`,
+            read_file: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`,
+            edit_file: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
+            write_file: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>`,
+            run_command: `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>`
+          }[step.tool] || `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>`;
+
+          const badge = document.createElement('div');
+          badge.className = 'tool-step-badge';
+          let summary = `${step.tool}`;
+          if (step.tool === 'list_files') {
+            summary += `: ${step.result?.fileCount ?? 0} files found`;
+          } else if (step.tool === 'read_file') {
+            summary += `: ${step.args?.filePath || ''}`;
+          } else if (step.tool === 'edit_file') {
+            const added = step.result?.addedLines ?? 0;
+            const removed = step.result?.removedLines ?? 0;
+            summary += `: ${step.args?.filePath || ''} (+${added} -${removed})`;
+          } else if (step.tool === 'write_file') {
+            summary += `: ${step.args?.filePath || ''}`;
+          } else if (step.tool === 'run_command') {
+            summary += `: ${step.args?.command || ''}`;
+          }
+          badge.innerHTML = `${svgIcon} <span>${escapeHtml(summary)}</span>`;
+          item.appendChild(badge);
+
+          if (step.result?.diffPreview || (step.tool === 'run_command' && step.result?.stdout)) {
+            const preview = document.createElement('pre');
+            preview.className = 'tool-diff-preview';
+            preview.style.display = 'none';
+
+            const codeContent = step.result.diffPreview || step.result.stdout || '';
+            preview.innerHTML = codeContent.split('\n').map(line => {
+              if (line.startsWith('+')) return `<span class="diff-add">${escapeHtml(line)}</span>`;
+              if (line.startsWith('-')) return `<span class="diff-del">${escapeHtml(line)}</span>`;
+              return escapeHtml(line);
+            }).join('\n');
+
+            badge.addEventListener('click', () => {
+              preview.style.display = preview.style.display === 'none' ? 'block' : 'none';
+            });
+            badge.title = 'Click to toggle diff or output details';
+            item.appendChild(preview);
+          }
+
+          stepsList.appendChild(item);
+          chatBubblesStream.scrollTop = chatBubblesStream.scrollHeight;
+        }
+      };
+    }
+
+    // Burger Menu & Floating Options Dropdown Controls
+    const btnChatMenuToggle = document.getElementById('btnChatMenuToggle');
+    const notchBurgerBtn = document.getElementById('notchBurgerBtn');
+    const chatHeaderDropdown = document.getElementById('chatHeaderDropdown');
+    const btnCloseChatDropdown = document.getElementById('btnCloseChatDropdown');
+    const dropdownAgentModeToggle = document.getElementById('dropdownAgentModeToggle');
+    const dropdownModelSelect = document.getElementById('dropdownModelSelect');
+    const btnDropdownWorkspace = document.getElementById('btnDropdownWorkspace');
+    const dropdownWorkspaceLabel = document.getElementById('dropdownWorkspaceLabel');
+
+    function toggleChatDropdown(open) {
+      if (!chatHeaderDropdown) return;
+      const isOpen = open !== undefined ? open : (chatHeaderDropdown.style.display !== 'none');
+      chatHeaderDropdown.style.display = isOpen ? 'none' : 'flex';
+      if (dropdownAgentModeToggle) dropdownAgentModeToggle.checked = isAgentMode;
+      const chatModelSelect = document.getElementById('chatModelSelect');
+      if (dropdownModelSelect && chatModelSelect) dropdownModelSelect.value = chatModelSelect.value;
+    }
+
+    if (btnChatMenuToggle) {
+      btnChatMenuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleChatDropdown();
+      });
+    }
+
+    if (notchBurgerBtn) {
+      notchBurgerBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetInactivityTimer();
+        if (islandWrapperEl && !islandWrapperEl.classList.contains('is-expanded')) {
+          setDrawerState(true);
+        }
+        setTimeout(() => toggleChatDropdown(false), 200);
+      });
+    }
+
+    if (btnCloseChatDropdown) {
+      btnCloseChatDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleChatDropdown(true);
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (chatHeaderDropdown && chatHeaderDropdown.style.display !== 'none') {
+        if (!chatHeaderDropdown.contains(e.target) && e.target !== btnChatMenuToggle && !btnChatMenuToggle?.contains(e.target)) {
+          chatHeaderDropdown.style.display = 'none';
+        }
+      }
+    });
+
+    function setAgentModeState(active) {
+      isAgentMode = active;
+      if (btnAgentModeToggle) btnAgentModeToggle.classList.toggle('active', isAgentMode);
+      if (dropdownAgentModeToggle) dropdownAgentModeToggle.checked = isAgentMode;
+      const modeText = document.getElementById('agentModeText');
+      if (modeText) modeText.textContent = isAgentMode ? 'Coding Agent' : 'Chat Only';
+      const agentModeMiniTag = document.getElementById('agentModeMiniTag');
+      if (agentModeMiniTag) agentModeMiniTag.textContent = isAgentMode ? 'Coding Agent' : 'Chat Only';
+      showMascotSpeech(isAgentMode ? 'Agent mode on! Ready to edit files.' : 'Switched to conversational chat.');
+    }
+
+    // Toggle Autonomous Coding Agent Mode
+    if (btnAgentModeToggle) {
+      btnAgentModeToggle.addEventListener('click', () => {
+        setAgentModeState(!isAgentMode);
+      });
+    }
+
+    if (dropdownAgentModeToggle) {
+      dropdownAgentModeToggle.addEventListener('change', (e) => {
+        setAgentModeState(e.target.checked);
+      });
+    }
+
+    // Sync Dropdown Model Select
+    if (dropdownModelSelect) {
+      dropdownModelSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        const chatModelSelect = document.getElementById('chatModelSelect');
+        if (chatModelSelect) {
+          chatModelSelect.value = val;
+          localStorage.setItem('loly_active_model', val);
+          if (val === 'chrome-builtin-only') {
+            updateAiEngineBadge(true, 'Nano Local (Strict)');
+          } else if (val === 'chrome-builtin-auto') {
+            checkChromeBuiltinAI();
+          } else {
+            updateAiEngineBadge(false, 'Gemini Cloud');
+          }
+        }
+      });
+    }
+
+    // Load active workspace directory
+    async function loadWorkspaceInfo() {
+      try {
+        const res = await fetch('/api/agent/workspace');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.workspaceDir) {
+            const parts = data.workspaceDir.split(/[\/\\]/);
+            const folderName = parts[parts.length - 1] || data.workspaceDir;
+            if (workspaceDirLabel) workspaceDirLabel.textContent = folderName;
+            if (dropdownWorkspaceLabel) dropdownWorkspaceLabel.textContent = folderName;
+            if (btnWorkspacePill) btnWorkspacePill.title = `Active workspace: ${data.workspaceDir}\nClick to change folder`;
+          }
+        }
+      } catch (_) {}
+    }
+    loadWorkspaceInfo();
+
+    async function promptChangeWorkspace() {
+      const current = workspaceDirLabel ? workspaceDirLabel.textContent : '';
+      const newPath = prompt('Enter absolute path to workspace folder for Loly to edit code in:', current);
+      if (newPath && newPath.trim()) {
+        try {
+          const res = await fetch('/api/agent/workspace', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ workspaceDir: newPath.trim() })
+          });
+          const data = await res.json();
+          if (data.workspaceDir) {
+            const parts = data.workspaceDir.split(/[\/\\]/);
+            const folderName = parts[parts.length - 1] || data.workspaceDir;
+            if (workspaceDirLabel) workspaceDirLabel.textContent = folderName;
+            if (dropdownWorkspaceLabel) dropdownWorkspaceLabel.textContent = folderName;
+            showMascotSpeech(`Workspace: ${folderName}`);
+          } else if (data.error) {
+            alert('Failed to set workspace: ' + data.error);
+          }
+        } catch (err) {
+          alert('Error updating workspace: ' + err.message);
+        }
+      }
+    }
+
+    // Click workspace pill or dropdown button to change project folder
+    if (btnWorkspacePill) btnWorkspacePill.addEventListener('click', promptChangeWorkspace);
+    if (btnDropdownWorkspace) btnDropdownWorkspace.addEventListener('click', promptChangeWorkspace);
+
+    // Setup Suggestion Chips
+    document.querySelectorAll('.suggestion-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const promptText = chip.getAttribute('data-prompt');
+        if (promptText && chatInput) {
+          chatInput.value = promptText;
+          sendChat();
+        }
+      });
+    });
+
     if (chatInput) {
-      // Automatic reaction while user types
       chatInput.addEventListener('input', () => {
         if (chatInput.value.length > 0) {
           loly.setExpression('thinking');
@@ -918,15 +1272,211 @@
       });
     }
 
+    // =========================================================================
+    // CHROME BUILT-IN AI (PROMPT API / GEMINI NANO) & CLOUD GEMINI ENGINE
+    // =========================================================================
+    const aiEngineBadge = document.getElementById('aiEngineBadge');
+    const engineDot = document.getElementById('engineDot');
+    const engineLabel = document.getElementById('engineLabel');
+
+    let chromeAiSession = null;
+    let isChromeAiAvailable = false;
+
+    async function checkChromeBuiltinAI() {
+      try {
+        const aiObj = window.ai || (typeof ai !== 'undefined' ? ai : null);
+        if (aiObj && aiObj.languageModel) {
+          // Check with short timeout so UI never freezes
+          const capsPromise = aiObj.languageModel.capabilities ? aiObj.languageModel.capabilities() : Promise.resolve(null);
+          const caps = await Promise.race([
+            capsPromise,
+            new Promise(res => setTimeout(() => res(null), 1200))
+          ]).catch(() => null);
+
+          // ONLY accept 'readily' - 'after-download' hangs indefinitely without model files
+          if (caps && caps.available === 'readily') {
+            isChromeAiAvailable = true;
+            updateAiEngineBadge(true, 'Nano Local');
+            return true;
+          }
+        }
+        if (typeof LanguageModel !== 'undefined' && typeof LanguageModel.availability === 'function') {
+          const avail = await Promise.race([
+            LanguageModel.availability(),
+            new Promise(res => setTimeout(() => res(null), 1200))
+          ]).catch(() => null);
+          if (avail === 'available' || avail === 'readily') {
+            isChromeAiAvailable = true;
+            updateAiEngineBadge(true, 'Prompt API');
+            return true;
+          }
+        }
+      } catch (_) {}
+      isChromeAiAvailable = false;
+      updateAiEngineBadge(false, 'Gemini Cloud');
+      return false;
+    }
+
+    function updateAiEngineBadge(isNano, label) {
+      if (!aiEngineBadge || !engineLabel) return;
+      engineLabel.textContent = label;
+      if (isNano) {
+        aiEngineBadge.classList.remove('cloud-mode');
+        aiEngineBadge.title = 'Inference Engine: Chrome Built-in AI (Gemini Nano on-device)';
+      } else {
+        aiEngineBadge.classList.add('cloud-mode');
+        aiEngineBadge.title = 'Inference Engine: Google Cloud Gemini API';
+      }
+    }
+
+    async function getOrCreateChromeAiSession() {
+      const aiObj = window.ai || (typeof ai !== 'undefined' ? ai : null);
+      if (aiObj && aiObj.languageModel) {
+        if (!chromeAiSession) {
+          const createPromise = aiObj.languageModel.create({
+            systemPrompt: 'You are Loly, a cute, smart desktop AI screen companion and software engineering buddy. Keep answers concise, clear, and direct (maximum 1-3 sentences unless asked for code). Speak warmly and accurately.'
+          });
+          chromeAiSession = await Promise.race([
+            createPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Prompt API initialization timed out')), 3500))
+          ]);
+        }
+        return chromeAiSession;
+      }
+      return null;
+    }
+
+    checkChromeBuiltinAI();
+
     if (btnSendChat) btnSendChat.addEventListener('click', sendChat);
 
     async function sendChat() {
       const text = chatInput ? chatInput.value.trim() : '';
       if (!text && !currentAttachedFile) return;
 
-      chatHistory.push({ role: 'user', content: text });
       if (chatInput) chatInput.value = '';
+      appendUserBubble(text || '[Attached File]');
 
+      const chatModelSelect = document.getElementById('chatModelSelect');
+      const model = chatModelSelect ? chatModelSelect.value : (localStorage.getItem('loly_active_model') || 'chrome-builtin-auto');
+
+      const lolyBubble = appendLolyBubble();
+
+      // Trigger notch chat animation during processing
+      const islandPill = document.getElementById('islandPill');
+      if (islandPill) islandPill.classList.add('notch-chat-active');
+      const cleanupChatAnimation = () => {
+        if (islandPill) islandPill.classList.remove('notch-chat-active');
+      };
+
+      // Check if this is an autonomous coding task
+      const lower = text.toLowerCase();
+      const isCodingTask = isAgentMode ||
+        lower.includes('edit') || lower.includes('fix') || lower.includes('change') ||
+        lower.includes('code') || lower.includes('file') || lower.includes('folder') ||
+        lower.includes('refactor') || lower.includes('run') || lower.includes('script') ||
+        lower.includes('bug') || lower.includes('scan') || lower.includes('workspace');
+
+      if (isCodingTask && !currentAttachedFile) {
+        // Run Autonomous Coding Agent across files in workspace
+        loly.setExpression('working');
+        showMascotSpeech('Working on your codebase...', 6000);
+        loly.startSpeaking();
+
+        try {
+          const res = await fetch('/api/agent/run', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt: text, model: (model && !model.startsWith('chrome-')) ? model : 'gemini-2.5-flash', maxTurns: 10 })
+          });
+
+          if (!res.ok) {
+            const errData = await res.json().catch(() => ({}));
+            throw new Error(errData.error || `Agent error ${res.status}`);
+          }
+
+          const reader = res.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = '';
+          let finalReply = '';
+          const filesModifiedSet = new Set();
+
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+              const trimmed = line.trim();
+              if (!trimmed.startsWith('data:')) continue;
+              const dataStr = trimmed.slice(5).trim();
+              if (!dataStr) continue;
+              try {
+                const parsed = JSON.parse(dataStr);
+                if (parsed.error) throw new Error(parsed.error);
+                if (parsed.step && lolyBubble) {
+                  lolyBubble.addToolStep(parsed.step);
+                  if (parsed.step.name && (parsed.step.name === 'write_file' || parsed.step.name === 'edit_file')) {
+                    if (parsed.step.args && parsed.step.args.path) filesModifiedSet.add(parsed.step.args.path);
+                  }
+                }
+                if (parsed.done) {
+                  finalReply = parsed.reply || finalReply;
+                  if (parsed.toolExecutions && Array.isArray(parsed.toolExecutions)) {
+                    parsed.toolExecutions.forEach(te => {
+                      if (te.tool === 'write_file' || te.tool === 'edit_file') {
+                        if (te.args && te.args.path) filesModifiedSet.add(te.args.path);
+                      }
+                    });
+                  }
+                }
+              } catch (jsonErr) {
+                if (jsonErr.message && !jsonErr.message.includes('JSON')) throw jsonErr;
+              }
+            }
+          }
+
+          loly.stopSpeaking();
+          cleanupChatAnimation();
+
+          const replyText = finalReply || 'Code modification complete.';
+          if (lolyBubble) {
+            lolyBubble.setText(replyText);
+
+            if (filesModifiedSet.size > 0) {
+              const fileList = Array.from(filesModifiedSet);
+              const summaryBadge = document.createElement('div');
+              summaryBadge.className = 'agent-summary-badge';
+              summaryBadge.innerHTML = `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> <span>Modified ${fileList.length} file(s): ${escapeHtml(fileList.join(', '))}</span>`;
+              lolyBubble.bubble.querySelector('.bubble-content').appendChild(summaryBadge);
+            }
+          }
+
+          chatHistory.push({ role: 'user', content: text });
+          chatHistory.push({ role: 'assistant', content: replyText });
+
+          loly.setExpression('happy');
+          loly.triggerBounce();
+          showMascotSpeech(replyText.slice(0, 100), 5000);
+          playChimeSound(880, 0.25);
+          return;
+        } catch (agentErr) {
+          loly.stopSpeaking();
+          cleanupChatAnimation();
+          loly.setExpression('surprised');
+          if (lolyBubble) {
+            lolyBubble.setText(`Agent task error: ${agentErr.message}`);
+          }
+          showMascotSpeech('Oops! Had an issue editing the files.');
+          return;
+        }
+      }
+
+      // Standard Conversational Streaming Chat
+      chatHistory.push({ role: 'user', content: text });
       loly.setExpression('thinking');
 
       let fileData = null;
@@ -940,20 +1490,85 @@
         if (attachedFileChip) attachedFileChip.style.display = 'none';
       }
 
+      // 1. Try Chrome Built-in AI if model is chrome-builtin-auto, chrome-builtin-only, or default
+      const isChromeOnly = (model === 'chrome-builtin-only');
+      const isAutoChrome = (!model || model === 'chrome-builtin-auto' || isChromeOnly);
+      if (isAutoChrome && !fileData) {
+        const chromeAvailable = await checkChromeBuiltinAI();
+        if (chromeAvailable) {
+          try {
+            updateAiEngineBadge(true, isChromeOnly ? 'Nano (Strict)' : 'Nano (Streaming)');
+            loly.setExpression('happy');
+            loly.startSpeaking();
+
+            const session = await getOrCreateChromeAiSession();
+            let fullReply = '';
+
+            const promptPromise = (async () => {
+              if (session && typeof session.promptStreaming === 'function') {
+                const stream = session.promptStreaming(text);
+                for await (const chunk of stream) {
+                  fullReply = chunk;
+                  if (lolyBubble) lolyBubble.setText(fullReply);
+                }
+              } else if (session && typeof session.prompt === 'function') {
+                fullReply = await session.prompt(text);
+                if (lolyBubble) lolyBubble.setText(fullReply);
+              }
+              return fullReply;
+            })();
+
+            // Fail fast (3.5s) if Chrome AI is thinking forever / hanging
+            await Promise.race([
+              promptPromise,
+              new Promise((_, reject) => setTimeout(() => reject(new Error('Prompt API response timed out')), 3500))
+            ]);
+
+            if (fullReply) {
+              loly.stopSpeaking();
+              cleanupChatAnimation();
+              chatHistory.push({ role: 'assistant', content: fullReply });
+              loly.setExpression('happy');
+              loly.triggerBounce();
+              showMascotSpeech(fullReply.slice(0, 100), 4500);
+              playChimeSound(820, 0.2);
+              updateAiEngineBadge(true, 'Nano Local');
+              return;
+            }
+          } catch (chromeErr) {
+            console.warn('[Chrome Built-in AI] Failed or timed out:', chromeErr);
+            chromeAiSession = null;
+            if (isChromeOnly) {
+              loly.stopSpeaking();
+              cleanupChatAnimation();
+              loly.setExpression('surprised');
+              const msg = `⚡ Chrome Built-in AI error: ${chromeErr.message || 'Prompt failed'}.\n(Cloud fallback disabled for "Chrome Built-in AI Only" model).`;
+              if (lolyBubble) lolyBubble.setText(msg);
+              showMascotSpeech('Chrome AI error.', 3500);
+              return;
+            }
+            isChromeAiAvailable = false;
+            updateAiEngineBadge(false, 'Cloud Fallback');
+          }
+        } else if (isChromeOnly) {
+          // If strictly Chrome Built-in AI Only was requested but not available
+          loly.setExpression('surprised');
+          cleanupChatAnimation();
+          const errorMsg = '⚡ Chrome Built-in AI (Prompt API On-Device Only) is not available or enabled in this browser.\n\nFallback to Cloud Gemini is disabled for this model option.\n\nTo enable local Gemini Nano:\n1. Open Chrome or Chromium.\n2. Navigate to chrome://flags/#prompt-api-for-gemini-nano and set to "Enabled".\n3. Restart browser or switch model to "Chrome Built-in AI (Auto Fallback)" or a Gemini Cloud model.';
+          if (lolyBubble) lolyBubble.setText(errorMsg);
+          showMascotSpeech('Chrome AI not available.', 4000);
+          return;
+        }
+      }
+
+      // 2. Google Cloud Gemini API (Fallback or explicit cloud model)
+      updateAiEngineBadge(false, 'Gemini Cloud');
       let fullReply = '';
       try {
-        const chatModelSelect = document.getElementById('chatModelSelect');
-        const model = chatModelSelect ? chatModelSelect.value : (localStorage.getItem('loly_active_model') || 'gemini-3.5-flash');
-
-        if (chatPopup && dialogueInner) {
-          chatPopup.style.display = 'block';
-          dialogueInner.textContent = '...';
-        }
-
         const res = await fetch('/api/gemini/chat-stream', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: chatHistory, model, fileData })
+          body: JSON.stringify({ messages: chatHistory, model: model === 'chrome-builtin-auto' ? 'gemini-3.5-flash' : model, fileData })
         });
 
         if (!res.ok) {
@@ -967,7 +1582,6 @@
         const reader = res.body.getReader();
         const decoder = new TextDecoder();
         let buffer = '';
-        dialogueInner.textContent = '';
 
         while (true) {
           const { done, value } = await reader.read();
@@ -984,38 +1598,36 @@
             if (!dataStr) continue;
             try {
               const parsed = JSON.parse(dataStr);
-              if (parsed.error) {
-                throw new Error(parsed.error);
-              }
+              if (parsed.error) throw new Error(parsed.error);
               if (parsed.chunk) {
                 fullReply += parsed.chunk;
-                dialogueInner.textContent = fullReply;
-                chatPopup.scrollTop = chatPopup.scrollHeight;
+                if (lolyBubble) lolyBubble.setText(fullReply);
               }
               if (parsed.done && parsed.fullReply) {
                 fullReply = parsed.fullReply;
-                dialogueInner.textContent = fullReply;
+                if (lolyBubble) lolyBubble.setText(fullReply);
               }
             } catch (jsonErr) {
-              if (jsonErr.message && !jsonErr.message.includes('JSON')) {
-                throw jsonErr;
-              }
+              if (jsonErr.message && !jsonErr.message.includes('JSON')) throw jsonErr;
             }
           }
         }
 
         loly.stopSpeaking();
+        cleanupChatAnimation();
         chatHistory.push({ role: 'assistant', content: fullReply || 'Done.' });
         loly.setExpression('happy');
         loly.triggerBounce();
+        showMascotSpeech(fullReply.slice(0, 100), 4500);
         playChimeSound(820, 0.2);
       } catch (err) {
         loly.stopSpeaking();
-        if (chatPopup && dialogueInner) {
-          chatPopup.style.display = 'block';
-          dialogueInner.textContent = fullReply ? `${fullReply} [interrupted: ${err.message}]` : `Request failed: ${err.message}`;
-        }
+        cleanupChatAnimation();
         loly.setExpression('surprised');
+        if (lolyBubble) {
+          lolyBubble.setText(fullReply ? `${fullReply} [interrupted: ${err.message}]` : `Error: ${err.message}`);
+        }
+        showMascotSpeech('Sorry, I ran into an error.');
       }
     }
 
@@ -1028,7 +1640,7 @@
     async function loadAvailableModels(forceRefresh = false) {
       if (!chatModelSelect) return;
 
-      const savedModel = localStorage.getItem('loly_active_model') || 'gemini-3.5-flash';
+      const savedModel = localStorage.getItem('loly_active_model') || 'chrome-builtin-auto';
 
       try {
         const res = await fetch('/api/gemini/models');
@@ -1037,10 +1649,17 @@
         const models = data.models || [];
         const serverModel = data.currentModel;
 
-        if (Array.isArray(models) && models.length > 0) {
-          const currentSelected = chatModelSelect.value || savedModel || serverModel || 'gemini-3.5-flash';
-          chatModelSelect.innerHTML = '';
+        const currentSelected = chatModelSelect.value || savedModel || serverModel || 'chrome-builtin-auto';
+        chatModelSelect.innerHTML = '';
 
+        // Add Chrome Built-in AI as the top choice
+        const chromeOpt = document.createElement('option');
+        chromeOpt.value = 'chrome-builtin-auto';
+        chromeOpt.textContent = '⚡ Chrome Built-in AI (Prompt API + Cloud Fallback)';
+        if (currentSelected === 'chrome-builtin-auto') chromeOpt.selected = true;
+        chatModelSelect.appendChild(chromeOpt);
+
+        if (Array.isArray(models) && models.length > 0) {
           models.forEach(m => {
             const opt = document.createElement('option');
             opt.value = m.id;
@@ -1050,16 +1669,34 @@
             }
             chatModelSelect.appendChild(opt);
           });
-
-          // Ensure selection is valid
-          if (!chatModelSelect.value && chatModelSelect.options.length > 0) {
-            chatModelSelect.selectedIndex = 0;
-          }
-
-          localStorage.setItem('loly_active_model', chatModelSelect.value);
         }
+
+        // Ensure selection is valid
+        if (!chatModelSelect.value && chatModelSelect.options.length > 0) {
+          chatModelSelect.selectedIndex = 0;
+        }
+
+        localStorage.setItem('loly_active_model', chatModelSelect.value);
+        if (dropdownModelSelect && chatModelSelect.value) {
+          dropdownModelSelect.value = chatModelSelect.value;
+        }
+        updateModelBadgeFromSelect();
       } catch (err) {
         console.warn('Unable to load dynamic models:', err);
+      }
+    }
+
+    function updateModelBadgeFromSelect() {
+      if (!chatModelSelect) return;
+      const val = chatModelSelect.value;
+      if (val === 'chrome-builtin-auto') {
+        if (isChromeAiAvailable) {
+          updateAiEngineBadge(true, 'Nano Local');
+        } else {
+          updateAiEngineBadge(false, 'Cloud Fallback');
+        }
+      } else {
+        updateAiEngineBadge(false, 'Gemini Cloud');
       }
     }
 
@@ -1072,6 +1709,7 @@
       chatModelSelect.addEventListener('change', async () => {
         const selected = chatModelSelect.value;
         localStorage.setItem('loly_active_model', selected);
+        updateModelBadgeFromSelect();
         try {
           await fetch('/api/gemini/model', {
             method: 'POST',
@@ -1093,6 +1731,7 @@
 
     // Initialize models list
     loadAvailableModels();
+
 
     // =========================================================================
     // 7. INTEGRATIONS PILLS (LAUNCH TERMINAL, VS CODE, BROWSER, FILES)
@@ -1416,6 +2055,418 @@
       if (s2 && stats.events !== undefined) s2.textContent = stats.events;
       if (s3 && stats.approvals !== undefined) s3.textContent = stats.approvals;
     }
+
+    // =========================================================================
+    // INACTIVITY AUTO-DISAPPEAR TIMER (30s DEFAULT, CONFIGURABLE IN SETTINGS)
+    // =========================================================================
+    let autohideSeconds = 30; // default 30s
+    let lastActivityTime = Date.now();
+
+    function resetInactivityTimer() {
+      lastActivityTime = Date.now();
+      const wrapper = document.getElementById('islandWrapper');
+      if (wrapper && wrapper.classList.contains('island-retracted')) {
+        wrapper.classList.remove('island-retracted');
+        wrapper.classList.add('island-waking');
+        setTimeout(() => {
+          if (wrapper) wrapper.classList.remove('island-waking');
+        }, 450);
+        if (window.desktopAPI && window.desktopAPI.setIslandRetracted) {
+          window.desktopAPI.setIslandRetracted(false);
+        }
+      }
+    }
+
+    // Load timer preference from localStorage and /api/config
+    const cachedTimerPref = localStorage.getItem('loly_autohide_seconds');
+    if (cachedTimerPref !== null) {
+      autohideSeconds = Number(cachedTimerPref);
+    }
+    fetch('/api/config')
+      .then(r => r.json())
+      .then(cfg => {
+        if (typeof cfg.autohideSeconds !== 'undefined') {
+          autohideSeconds = Number(cfg.autohideSeconds);
+        }
+        if (typeof cfg.voiceWakeEnabled !== 'undefined') {
+          voiceWakeEnabled = Boolean(cfg.voiceWakeEnabled);
+          updateVoiceButtonState();
+        }
+      })
+      .catch(() => {});
+
+    // Reset on any user interactions
+    ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll'].forEach(evt => {
+      window.addEventListener(evt, resetInactivityTimer, { passive: true });
+    });
+
+    // Top screen edge proximity: wake immediately if cursor is within top 24px
+    window.addEventListener('mousemove', (e) => {
+      if (e.clientY <= 24) {
+        resetInactivityTimer();
+      }
+    });
+
+    const islandWrapperEl = document.getElementById('islandWrapper');
+    if (islandWrapperEl) {
+      islandWrapperEl.addEventListener('mouseenter', resetInactivityTimer);
+    }
+
+    const islandPeekHandle = document.getElementById('islandPeekHandle');
+    if (islandPeekHandle) {
+      islandPeekHandle.addEventListener('mouseenter', resetInactivityTimer);
+      islandPeekHandle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        resetInactivityTimer();
+        if (islandWrapperEl && !islandWrapperEl.classList.contains('is-expanded')) {
+          setDrawerState(true);
+        }
+      });
+    }
+
+    // Check inactivity every second
+    setInterval(() => {
+      if (autohideSeconds <= 0) return; // 'Never'
+      if (!islandWrapperEl) return;
+      if (typeof isAudioPlaying !== 'undefined' && isAudioPlaying) return; // keep visible while playing audio
+      if (document.getElementById('quickAllowBtn') && document.getElementById('quickAllowBtn').offsetParent !== null) return; // awaiting approval
+
+      const elapsed = Date.now() - lastActivityTime;
+      if (elapsed >= autohideSeconds * 1000) {
+        if (islandWrapperEl.classList.contains('is-expanded')) {
+          setDrawerState(false);
+        }
+        if (!islandWrapperEl.classList.contains('island-retracted')) {
+          islandWrapperEl.classList.add('island-retracted');
+          if (window.desktopAPI && window.desktopAPI.setIslandRetracted) {
+            window.desktopAPI.setIslandRetracted(true);
+          }
+        }
+      }
+    }, 1000);
+
+    // =========================================================================
+    // VOICE COMMAND ENGINE WITH WAKE WORDS ("HEY LOLY", "COUCOU LOLY")
+    // =========================================================================
+    let voiceWakeEnabled = localStorage.getItem('loly_voice_wake_enabled') !== 'false';
+    const voiceWakeBtn = document.getElementById('voiceWakeBtn');
+    let speechRecognizer = null;
+    let isSpeechListening = false;
+    let isAwaitingVoiceCommand = false;
+    let voiceCommandTimeout = null;
+    let micStream = null;
+    let audioContext = null;
+
+    function updateVoiceButtonState() {
+      if (!voiceWakeBtn) return;
+      if (voiceWakeEnabled && isSpeechListening) {
+        voiceWakeBtn.classList.add('listening');
+        voiceWakeBtn.title = 'Voice Active: Listening for "Hey Loly"';
+      } else if (voiceWakeEnabled) {
+        voiceWakeBtn.classList.remove('listening');
+        voiceWakeBtn.title = 'Voice Wake Word Enabled: Say "Hey Loly"';
+      } else {
+        voiceWakeBtn.classList.remove('listening');
+        voiceWakeBtn.title = 'Voice Wake Disabled (Click to activate)';
+      }
+    }
+
+    // Audio energy voice activity detector as companion/fallback
+    async function initVoiceActivityDetection() {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+      try {
+        if (!micStream) {
+          micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        }
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx || audioContext) return;
+        audioContext = new AudioCtx();
+        const source = audioContext.createMediaStreamSource(micStream);
+        const analyser = audioContext.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        let energyTriggerCount = 0;
+
+        const checkEnergy = () => {
+          if (!voiceWakeEnabled) {
+            requestAnimationFrame(checkEnergy);
+            return;
+          }
+          analyser.getByteFrequencyData(dataArray);
+          let sum = 0;
+          for (let i = 0; i < dataArray.length; i++) sum += dataArray[i];
+          const avg = sum / dataArray.length;
+
+          if (avg > 24) {
+            energyTriggerCount++;
+            if (energyTriggerCount === 4) {
+              resetInactivityTimer();
+              if (islandWrapperEl && islandWrapperEl.classList.contains('island-retracted')) {
+                resetInactivityTimer();
+              }
+            }
+          } else {
+            energyTriggerCount = Math.max(0, energyTriggerCount - 1);
+          }
+          requestAnimationFrame(checkEnergy);
+        };
+        requestAnimationFrame(checkEnergy);
+      } catch (err) {
+        console.warn('[Loly Mic] Mic energy monitor notice:', err);
+      }
+    }
+
+    function initSpeechRecognition() {
+      initVoiceActivityDetection();
+
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        console.warn('[Loly Voice] Web Speech API not supported in this runtime');
+        return;
+      }
+
+      try {
+        speechRecognizer = new SpeechRecognition();
+        speechRecognizer.continuous = true;
+        speechRecognizer.interimResults = false;
+        speechRecognizer.lang = 'en-US';
+
+        speechRecognizer.onstart = () => {
+          isSpeechListening = true;
+          updateVoiceButtonState();
+        };
+
+        speechRecognizer.onend = () => {
+          isSpeechListening = false;
+          updateVoiceButtonState();
+          // Auto-restart continuous listening if voice wake remains enabled
+          if (voiceWakeEnabled) {
+            setTimeout(() => {
+              try { speechRecognizer.start(); } catch (_) {}
+            }, 600);
+          }
+        };
+
+        speechRecognizer.onerror = (event) => {
+          console.warn('[Loly Voice] Speech recognition event:', event.error);
+          if (event.error === 'not-allowed') {
+            voiceWakeEnabled = false;
+            updateVoiceButtonState();
+          } else if (voiceWakeEnabled && event.error !== 'aborted') {
+            setTimeout(() => {
+              try { speechRecognizer.start(); } catch (_) {}
+            }, 800);
+          }
+        };
+
+        speechRecognizer.onresult = (event) => {
+          const results = event.results;
+          const latestResult = results[results.length - 1];
+          if (!latestResult || !latestResult[0]) return;
+
+          const transcript = latestResult[0].transcript.trim().toLowerCase();
+          console.log('[Loly Voice] Heard:', transcript);
+
+          handleVoiceTranscript(transcript);
+        };
+
+        if (voiceWakeEnabled) {
+          try {
+            speechRecognizer.start();
+          } catch (_) {}
+        }
+      } catch (err) {
+        console.warn('[Loly Voice] Initialization failed:', err);
+      }
+    }
+
+    function handleVoiceTranscript(rawText) {
+      resetInactivityTimer();
+
+      const wakeWords = ['hey loly', 'hey loli', 'loly', 'loli', 'hi loly', 'coucou loly', 'coucou', 'wake up loly', 'wake up', 'hello loly'];
+      let matchedWake = null;
+
+      for (const w of wakeWords) {
+        if (rawText.startsWith(w) || rawText.includes(w)) {
+          matchedWake = w;
+          break;
+        }
+      }
+
+      if (matchedWake || isAwaitingVoiceCommand) {
+        let command = rawText;
+        if (matchedWake) {
+          const idx = rawText.indexOf(matchedWake);
+          command = rawText.slice(idx + matchedWake.length).trim();
+          command = command.replace(/^[,.!\- ]+/, '').trim();
+        }
+
+        resetInactivityTimer();
+        playChimeSound(660, 0.12);
+        setTimeout(() => playChimeSound(880, 0.18), 120);
+        loly.setExpression('happy');
+        loly.triggerBounce();
+
+        if (!command) {
+          showMascotSpeech("Hey! I'm listening...", 3500);
+          isAwaitingVoiceCommand = true;
+          if (voiceCommandTimeout) clearTimeout(voiceCommandTimeout);
+          voiceCommandTimeout = setTimeout(() => { isAwaitingVoiceCommand = false; }, 6000);
+          return;
+        }
+
+        isAwaitingVoiceCommand = false;
+        executeVoiceCommand(command);
+      }
+    }
+
+    function executeVoiceCommand(cmd) {
+      console.log('[Loly Voice] Executing command:', cmd);
+      resetInactivityTimer();
+
+      if (cmd.includes('settings') || cmd.includes('control center') || cmd.includes('preferences')) {
+        showMascotSpeech('Opening settings window!', 3000);
+        if (window.desktopAPI && window.desktopAPI.openSettingsWindow) {
+          window.desktopAPI.openSettingsWindow();
+        } else {
+          window.open('/settings.html', 'LolySettings', 'width=980,height=720');
+        }
+        return;
+      }
+      if (cmd.includes('play music') || cmd.includes('play track') || cmd.includes('start music') || cmd.includes('resume music')) {
+        showMascotSpeech('Playing music!', 3000);
+        const playBtn = document.getElementById('musicPlayBtn');
+        if (playBtn) playBtn.click();
+        return;
+      }
+      if (cmd.includes('pause music') || cmd.includes('stop music')) {
+        showMascotSpeech('Music paused.', 3000);
+        const playBtn = document.getElementById('musicPlayBtn');
+        if (playBtn) playBtn.click();
+        return;
+      }
+      if (cmd.includes('hide') || cmd.includes('disappear') || cmd.includes('sleep') || cmd.includes('retract')) {
+        showMascotSpeech('Going to sleep!', 2500);
+        setTimeout(() => {
+          if (islandWrapperEl) {
+            setDrawerState(false);
+            islandWrapperEl.classList.add('island-retracted');
+          }
+        }, 1000);
+        return;
+      }
+      if (cmd.includes('expand') || cmd.includes('open island') || cmd.includes('open drawer')) {
+        setDrawerState(true);
+        showMascotSpeech('Expanded!', 2500);
+        return;
+      }
+      if (cmd.includes('collapse') || cmd.includes('close island')) {
+        setDrawerState(false);
+        showMascotSpeech('Collapsed!', 2500);
+        return;
+      }
+      if (cmd.includes('agent mode') || cmd.includes('coding agent')) {
+        const btnAgentToggle = document.getElementById('btnAgentModeToggle');
+        if (btnAgentToggle) btnAgentToggle.click();
+        showMascotSpeech('Toggled agent mode!', 2500);
+        return;
+      }
+
+      // Natural language question or coding command:
+      // Open drawer to chat tab if collapsed, populate input, and trigger send
+      setDrawerState(true);
+      switchView('chat');
+      const input = document.getElementById('chatInput');
+      if (input) {
+        input.value = cmd;
+        showMascotSpeech(`Asking: "${cmd.slice(0, 35)}..."`, 3000);
+        setTimeout(() => {
+          sendChat();
+        }, 300);
+      }
+    }
+
+    if (voiceWakeBtn) {
+      voiceWakeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        voiceWakeEnabled = !voiceWakeEnabled;
+        localStorage.setItem('loly_voice_wake_enabled', String(voiceWakeEnabled));
+        updateVoiceButtonState();
+        if (voiceWakeEnabled) {
+          if (speechRecognizer && !isSpeechListening) {
+            try { speechRecognizer.start(); } catch (_) {}
+          }
+          showMascotSpeech('Voice wake enabled! Say "Hey Loly".', 3000);
+          playChimeSound(780, 0.15);
+        } else {
+          if (speechRecognizer && isSpeechListening) {
+            try { speechRecognizer.stop(); } catch (_) {}
+          }
+          showMascotSpeech('Voice wake muted.', 2500);
+        }
+      });
+    }
+
+    initSpeechRecognition();
+
+    // =========================================================================
+    // CUSTOM HOVER INDICATOR / TOOLTIP ENGINE (REPLACES DEFAULT OS TOOLTIPS)
+    // =========================================================================
+    function initCustomTooltips() {
+      let tooltipEl = document.getElementById('lolyCustomTooltip');
+      if (!tooltipEl) {
+        tooltipEl = document.createElement('div');
+        tooltipEl.id = 'lolyCustomTooltip';
+        tooltipEl.className = 'loly-custom-tooltip';
+        document.body.appendChild(tooltipEl);
+      }
+
+      document.addEventListener('mouseover', (e) => {
+        const target = e.target.closest('[title], [data-tooltip]');
+        if (!target) return;
+
+        if (target.hasAttribute('title')) {
+          const titleVal = target.getAttribute('title');
+          if (titleVal) {
+            target.setAttribute('data-tooltip', titleVal);
+            target.removeAttribute('title');
+          }
+        }
+
+        const text = target.getAttribute('data-tooltip');
+        if (!text) return;
+
+        tooltipEl.textContent = text;
+        tooltipEl.className = 'loly-custom-tooltip';
+
+        const rect = target.getBoundingClientRect();
+        const tooltipWidth = tooltipEl.offsetWidth || 80;
+        const tooltipHeight = tooltipEl.offsetHeight || 24;
+
+        let left = rect.left + rect.width / 2 - tooltipWidth / 2;
+        left = Math.max(6, Math.min(window.innerWidth - tooltipWidth - 6, left));
+
+        if (rect.bottom + tooltipHeight + 10 < window.innerHeight) {
+          tooltipEl.style.top = `${rect.bottom + 6}px`;
+          tooltipEl.classList.add('pos-bottom');
+        } else {
+          tooltipEl.style.top = `${Math.max(4, rect.top - tooltipHeight - 6)}px`;
+          tooltipEl.classList.add('pos-top');
+        }
+        tooltipEl.style.left = `${left}px`;
+        tooltipEl.classList.add('visible');
+      }, true);
+
+      document.addEventListener('mouseout', (e) => {
+        const target = e.target.closest('[data-tooltip]');
+        if (target && tooltipEl) {
+          tooltipEl.classList.remove('visible');
+        }
+      }, true);
+    }
+    initCustomTooltips();
   });
 
 })();

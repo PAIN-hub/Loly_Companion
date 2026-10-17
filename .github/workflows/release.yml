@@ -1,0 +1,36 @@
+name: Release Build Matrix (Windows, Linux, macOS)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Standalone Packages
+        uses: samuelmeuli/action-electron-builder@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          release: true
+          build_script_name: dist

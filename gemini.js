@@ -1,58 +1,14 @@
 // Google Gemini API integration using native fetch
-export const GEMINI_DEFAULT_MODEL = 'gemini-3.5-flash';
+export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
 
 export const SUPPORTED_GEMINI_MODELS = [
-  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash (Fast, Recommended)' },
-  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Latest Flagship)' },
-  { id: 'gemini-3.7-flash', name: 'Gemini 3.7 Flash' },
-  { id: 'gemini-3.6-flash', name: 'Gemini 3.6 Flash' },
-  { id: 'gemini-3.5-flash-lite', name: 'Gemini 3.5 Flash Lite' },
-  { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview' },
-  { id: 'gemini-3.1-flash-lite', name: 'Gemini 3.1 Flash Lite' },
-  { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview' },
-  { id: 'antigravity-preview-latest', name: 'Antigravity Preview' }
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Fast, Recommended)' },
+  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Deep Reasoning & Coding)' },
+  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' }
 ];
 
 export async function listGeminiModels(apiKey) {
-  const activeKey = apiKey || process.env.GEMINI_API_KEY;
-  if (!activeKey) {
-    return SUPPORTED_GEMINI_MODELS;
-  }
-
-  try {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(activeKey)}`;
-    const response = await fetch(endpoint);
-    if (!response.ok) {
-      return SUPPORTED_GEMINI_MODELS;
-    }
-    const data = await response.json();
-    const excludedPatterns = [
-      'tts', 'transcribe', 'lyria', 'banana', 'embedding', 'aqa',
-      'computer-use', 'robotics', 'gemini-2.5-flash$' // 2.5-flash is sunset for new chat
-    ];
-
-    const liveModels = (data.models || [])
-      .filter(m => {
-        if (!Array.isArray(m.supportedGenerationMethods) || !m.supportedGenerationMethods.includes('generateContent')) {
-          return false;
-        }
-        const id = m.name.replace(/^models\//, '');
-        const isExcluded = excludedPatterns.some(pattern => new RegExp(pattern, 'i').test(id));
-        return !isExcluded;
-      })
-      .map(m => {
-        const id = m.name.replace(/^models\//, '');
-        return {
-          id,
-          name: m.displayName ? `${m.displayName}` : id,
-          description: m.description || ''
-        };
-      });
-
-    return liveModels.length > 0 ? liveModels : SUPPORTED_GEMINI_MODELS;
-  } catch (_) {
-    return SUPPORTED_GEMINI_MODELS;
-  }
+  return SUPPORTED_GEMINI_MODELS;
 }
 
 export const LOLY_SYSTEM_INSTRUCTION = `You are Loly, a charming anime desktop companion and AI assistant sitting right on the user's screen notch.
@@ -61,6 +17,13 @@ PERSONALITY GUIDELINES:
 - Be witty, cheerful, and direct.
 - Never write long explanations or fluff unless the user specifically commands you to write extensive code or a long guide.
 - Act like an intelligent, lively companion who values the user's focus and screen real estate.`;
+
+export function resolveCloudModel(model) {
+  if (!model || model === 'chrome-builtin-auto' || model === 'chrome-builtin-only' || model.startsWith('chrome-')) {
+    return GEMINI_DEFAULT_MODEL;
+  }
+  return model;
+}
 
 export async function chatWithGemini({
   messages,
@@ -74,7 +37,8 @@ export async function chatWithGemini({
     throw new Error('Gemini API key is not configured. Set GEMINI_API_KEY environment variable or enter it in Settings.');
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(activeKey)}`;
+  const effectiveModel = resolveCloudModel(model);
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:generateContent?key=${encodeURIComponent(activeKey)}`;
 
   // Convert messages to Gemini format
   const contents = messages.map(msg => ({
@@ -144,7 +108,8 @@ export async function* chatStreamWithGemini({
     throw new Error('Gemini API key is not configured.');
   }
 
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(activeKey)}`;
+  const effectiveModel = resolveCloudModel(model);
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(effectiveModel)}:streamGenerateContent?alt=sse&key=${encodeURIComponent(activeKey)}`;
 
   const contents = messages.map(msg => ({
     role: msg.role === 'assistant' ? 'model' : 'user',
