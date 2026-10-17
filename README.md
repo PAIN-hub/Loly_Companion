@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/icon.png" width="130" height="130" alt="Loly Companion Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);" />
+<img src="public/icon1.png" width="130" height="130" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);" />
 
 # Loly Companion
 
@@ -30,13 +30,13 @@ An intelligent, non-intrusive desktop companion and floating notch interface des
 
 ## Visual Overview
 
-### Floating Hardware Notch
+##### Floating Hardware Notch
 <img src="public/screenshot/notch_preview.png" width="430" alt="Hardware Notch Interface" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> 
 
-###  Real-Time Agent Tool Inspection
+#####  Real-Time Agent Tool Inspection
 <img src="public/screenshot/tools_preview.png" width="430" alt="Agent Tools and Approvals" style="border-radius: 8px; border: 1px solid #e2e8f0;" />
 
-### Chat agent preview
+##### Chat agent preview
 <img src="public/screenshot/chat_agent_preview.png" width="880" alt="Loly Companion Autonomous Coding Agent Interface" style="border-radius: 10px; border: 1px solid #e2e8f0;" />
 
 </div>
