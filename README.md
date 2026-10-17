@@ -107,7 +107,7 @@ Loly Companion v2 provides standalone production binaries for **Windows**, **Lin
 
 | Package | File Name | Size | Description |
 |---|---|---|---|
-| **macOS Bundle (.zip)** | [`Loly-2.0.0-mac.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0-mac.zip) | ~95 MB | Standalone macOS application bundle. Unzip and drag `Loly.app` into Applications. |
+| **macOS Bundle (.zip)** | [`Loly-2.0.0-arm64-mac.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0-arm64-mac.zip) | ~127 MB | Standalone macOS application bundle. Unzip and drag `Loly.app` into Applications. |
 
 ---
 
