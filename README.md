@@ -31,13 +31,13 @@ An intelligent, non-intrusive desktop companion and floating notch interface des
 ## Visual Overview
 
 ### Floating Hardware Notch
-<img src="docs/screenshot/notch_preview.png" width="430" alt="Hardware Notch Interface" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> 
+<img src="public/screenshot/notch_preview.png" width="430" alt="Hardware Notch Interface" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> 
 
 ###  Real-Time Agent Tool Inspection
-<img src="docs/screenshot/tools_preview.png" width="430" alt="Agent Tools and Approvals" style="border-radius: 8px; border: 1px solid #e2e8f0;" />
+<img src="public/screenshot/tools_preview.png" width="430" alt="Agent Tools and Approvals" style="border-radius: 8px; border: 1px solid #e2e8f0;" />
 
 ### Chat agent preview
-<img src="docs/screenshot/chat_agent_preview.png" width="880" alt="Loly Companion Autonomous Coding Agent Interface" style="border-radius: 10px; border: 1px solid #e2e8f0;" />
+<img src="public/screenshot/chat_agent_preview.png" width="880" alt="Loly Companion Autonomous Coding Agent Interface" style="border-radius: 10px; border: 1px solid #e2e8f0;" />
 
 </div>
 
