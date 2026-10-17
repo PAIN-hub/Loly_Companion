@@ -1,271 +1,218 @@
-# 🌟 Loly Companion — AI Coding Agent Desktop Screen Island
-
 <div align="center">
 
-<img src="public/Icon.png" width="360" height="aspect-ratio: 1" alt="Example" />
+<img src="public/Icon.png" width="130" height="130" alt="Loly Companion Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);" />
 
-### An intelligent screen island & desktop companion for Windows & Linux
-*Watching over autonomous AI coding agents with the Google Gemini API, interactive cursor-tracking mascot, one-click terminal approvals, and procedural focus lo-fi beats.*
+# Loly Companion
 
-[![GitHub Release](https://img.shields.io/github/v/release/PAIN-hub/Loly_Companion?style=flat-square&color=black)](https://github.com/PAIN-hub/Loly_Companion/releases)
-[![GitHub Pages](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-black?style=flat-square&logo=github)](https://pain-hub.github.io/Loly_Companion/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-black.svg?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-Windows%20%7C%20Linux-black?style=flat-square)](https://github.com/PAIN-hub/Loly_Companion/releases)
-[![Gemini API](https://img.shields.io/badge/AI-Google%20Gemini%202.5%20Flash-black?style=flat-square&logo=google)](GEMINI_API_GUIDE.md)
-[![Node.js](https://img.shields.io/badge/Node.js-v20%2B-black?style=flat-square&logo=node.js)](package.json)
+### Autonomous AI Coding Agent Companion & Desktop Screen Island
 
-**[🌐 Official Website & Live Web Simulator](https://pain-hub.github.io/Loly_Companion/)** • **[📦 Download Releases](#-downloads--releases)** • **[🔑 Gemini API Guide](GEMINI_API_GUIDE.md)** • **[📖 Quickstart](#-how-to-run-locally)**
+An intelligent, non-intrusive desktop companion and floating notch interface designed for developers orchestrating autonomous AI coding agents. Engineered with Google Gemini, on-device Chrome Built-in AI, real-time terminal approval gates, and multi-file code editing capabilities.
 
 <br/>
 
-<div align="center">
+[![Release](https://img.shields.io/github/v/release/PAIN-hub/Loly_Companion?style=flat-square&color=111827)](https://github.com/PAIN-hub/Loly_Companion/releases)
+[![Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-111827?style=flat-square&logo=github)](https://pain-hub.github.io/Loly_Companion/)
+[![Platform](https://img.shields.io/badge/Platform-Windows_|_Linux_|_macOS-111827?style=flat-square)](https://github.com/PAIN-hub/Loly_Companion/releases)
+[![AI Engine](https://img.shields.io/badge/AI-Google_Gemini_2.5_Flash-111827?style=flat-square&logo=google)](GEMINI_API_GUIDE.md)
+[![License](https://img.shields.io/badge/License-MIT-111827?style=flat-square)](LICENSE)
 
-### 🖥️ Hardware Notch & Autonomous Coding Agent UI (v2.0.0)
+<br/>
 
-| Collapsed Screen Notch | Expanded Agent Tools |
+<p align="center">
+  <a href="https://pain-hub.github.io/Loly_Companion/" style="text-decoration: none;"><code>Documentation &amp; Demo</code></a> &nbsp;&bull;&nbsp;
+  <a href="#downloads--packages" style="text-decoration: none;"><code>Download Binaries</code></a> &nbsp;&bull;&nbsp;
+  <a href="GEMINI_API_GUIDE.md" style="text-decoration: none;"><code>Gemini Setup Guide</code></a> &nbsp;&bull;&nbsp;
+  <a href="#quickstart" style="text-decoration: none;"><code>Quickstart</code></a> &nbsp;&bull;&nbsp;
+  <a href="#architecture" style="text-decoration: none;"><code>Architecture</code></a>
+</p>
+
+---
+
+### Visual Overview
+
+| Floating Hardware Notch | Real-Time Agent Tool Inspection |
 | :---: | :---: |
-| <img src="docs/screenshots/notch_preview.png" width="380" alt="Hardware Notch" /> | <img src="docs/screenshots/tools_preview.png" width="380" alt="Agent Tools Integration" /> |
+| <img src="docs/screenshots/notch_preview.png" width="430" alt="Hardware Notch Interface" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> | <img src="docs/screenshots/tools_preview.png" width="430" alt="Agent Tools and Approvals" style="border-radius: 8px; border: 1px solid #e2e8f0;" /> |
 
 <br/>
 
-<img src="docs/screenshots/chat_agent_preview.png" width="760" alt="Loly Companion Chat & Autonomous Coding Agent" />
+<img src="docs/screenshots/chat_agent_preview.png" width="880" alt="Loly Companion Autonomous Coding Agent Interface" style="border-radius: 10px; border: 1px solid #e2e8f0;" />
 
 </div>
 
-</div>
+---
+
+## Executive Summary
+
+When autonomous agentic systems (such as Gemini CLI, Claude Code, Antigravity, and Cursor) perform complex multi-turn modifications across codebases, developers lose visibility into background edits, command invocations, and pending execution gates.
+
+**Loly Companion** establishes continuous real-time oversight via an unobtrusive screen island anchored to the top center of your display:
+
+- **Autonomous Multi-File Coding Agent**: Direct Loly to inspect, create, refactor, and execute terminal commands across local directories within verified security boundaries.
+- **In-Pill Permission Approvals**: Grant or deny terminal executions (`Allow`, `Deny`, `Always`) directly from the floating interface without switching application focus.
+- **Hybrid AI Architecture**: Seamlessly leverages on-device **Chrome Built-in AI** (Prompt API / Gemini Nano) with automatic cloud fallback to **Google Gemini 2.5 Flash** and **Gemini 2.5 Pro**.
+- **Offline Audio Storage**: Procedural ambient synthesizer and Lo-Fi workstation running locally via IndexedDB with full support for importing personal audio libraries.
+- **Complete Data Sovereignty**: All audit logs, file diffs, and chat sessions are stored locally in an isolated SQLite database (`~/.loly/loly.db`). Zero telemetry or external tracking.
 
 ---
 
-## 📖 Table of Contents
-1. [Overview](#-overview)
-2. [📦 Downloads & Releases (Windows & Linux)](#-downloads--releases)
-3. [✨ Key Features](#-key-features)
-4. [🚀 How to Run Locally (Node.js & Electron)](#-how-to-run-locally)
-5. [🔑 Google Gemini API Setup](#-google-gemini-api-setup)
-6. [🔌 Connecting AI Agents (Hooks & Sockets)](#-connecting-ai-agents)
-7. [🎨 Dual Theme Architecture (White Mode & Pitch-Black OLED)](#-dual-theme-architecture)
-8. [🔒 Privacy & Security Standards](#-privacy--security-standards)
-9. [🛠️ Contributing & Development](#-contributing--development)
-10. [📄 License](#-license)
+## Downloads & Packages
 
----
+Standalone compiled binaries are available for Windows, Linux, and macOS. Every release includes an embedded Node.js backend daemon and operates out of the box with no manual server management.
 
-## 🌟 Overview
+### Windows (x64)
 
-As autonomous coding agents (**Gemini CLI**, **Claude Code**, **Antigravity**, **Cursor**, **Codex**) run long multi-file refactorings and terminal commands in background terminals, developers lose visibility into what files are being touched and what commands require approval.
-
-**Loly Companion** solves this with a lightweight screen island (anchored seamlessly at the top center of your monitor) and an interactive companion mascot (**Loly**):
-- **Live Stream Ticker**: Real-time ticker of active commands, tools, and git diff statistics (`+42 -10`).
-- **Interactive Cursor-Tracking Mascot**: Calculates geometric vectors in real-time to follow your mouse gaze across the screen.
-- **In-Pill Permission Approvals**: Approve or deny sensitive bash commands (`Allow`, `Deny`, `Always`) directly from the island without switching terminal focus.
-- **AI Safety Review**: One-click prompt that asks **Gemini 2.5 Flash** to inspect pending commands or diffs for destructive risk.
-- **Procedural Lo-Fi Soundscapes**: Lightweight focus music synthesizer built directly into the Web Audio API with zero external MP3 dependencies.
-- **Private SQLite Storage**: Zero telemetry. All audit trails, chat logs, and approval histories stay in your local `~/.loly/loly.db`.
-
----
-
-## 📦 Downloads & Releases (v2.0.0)
-
-Loly Companion v2 provides standalone production binaries for **Windows**, **Linux**, and **macOS**. You can download them directly from the [GitHub Releases page](https://github.com/PAIN-hub/Loly_Companion/releases/tag/v2.0.0) or use the links below:
-
-### 🪟 Windows (64-bit)
-
-| Package | File Name | Size | Description |
+| Distribution | Asset | Architecture | Package Details |
 |---|---|---|---|
-| **Portable (.exe)** | [`Loly-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.exe) | ~95 MB | **Zero Installation**: Double-click to run immediately on any Windows 10/11 system. |
-| **Setup Installer (.exe)** | [`Loly-Setup-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-Setup-2.0.0.exe) | ~95 MB | Full desktop NSIS installer with desktop shortcut and Start Menu entry. |
-| **Zipped Archive (.zip)** | [`loly-windows-package.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly-windows-package.zip) | ~25 MB | Zipped package with all runtime dependencies. |
+| Portable Executable | [`Loly-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.exe) | `x86_64` | Standalone binary. Runs directly without installation. |
+| Setup Installer | [`Loly-Setup-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-Setup-2.0.0.exe) | `x86_64` | NSIS wizard with Start Menu and desktop shortcut creation. |
 
-> **How to run on Windows**:
-> 1. Download `Loly-2.0.0.exe`.
-> 2. Double-click to launch.
-> 3. Loly appears as a floating transparent island at the top of your screen. Toggle visibility anytime with `Ctrl + Shift + L`.
+### Linux (x64)
 
----
-
-### 🐧 Linux (x86_64)
-
-| Package | File Name | Size | Description |
+| Distribution | Asset | Architecture | Package Details |
 |---|---|---|---|
-| **Universal AppImage** | [`Loly-2.0.0.AppImage`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.AppImage) | ~120 MB | **Works on all distros**: Ubuntu 22.04/24.04+, Debian, Kali, Fedora, Arch, with or without `libfuse2`. |
-| **Debian / Ubuntu (.deb)** | [`loly_2.0.0_amd64.deb`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly_2.0.0_amd64.deb) | ~95 MB | Native Debian package. Integrates into your application menu. |
-| **Portable Tarball** | [`loly-linux-x64.tar.gz`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly-linux-x64.tar.gz) | ~117 MB | Standalone portable archive. Extract and run `./loly`. |
+| Universal AppImage | [`Loly-2.0.0.AppImage`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.AppImage) | `x86_64` | Compatible with Ubuntu, Debian, Arch, Fedora, and Kali Linux. |
+| Debian Package | [`loly_2.0.0_amd64.deb`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly_2.0.0_amd64.deb) | `amd64` | Native distribution package installer via `sudo dpkg -i`. |
 
-> **How to run on Linux**:
-> ```bash
-> # Make the AppImage executable and launch:
-> chmod +x Loly-2.0.0.AppImage
-> ./Loly-2.0.0.AppImage
-> 
-> # Or install via dpkg on Debian/Ubuntu/Kali:
-> sudo dpkg -i loly_2.0.0_amd64.deb
-> ```
+### macOS (Apple Silicon & Intel)
 
----
-
-### 🍎 macOS (Apple Silicon & Intel)
-
-| Package | File Name | Size | Description |
+| Distribution | Asset | Architecture | Package Details |
 |---|---|---|---|
-| **macOS Bundle (.zip)** | [`Loly-2.0.0-arm64-mac.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0-arm64-mac.zip) | ~127 MB | Standalone macOS application bundle. Unzip and drag `Loly.app` into Applications. |
+| Application Bundle | [`Loly-2.0.0-arm64-mac.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0-arm64-mac.zip) | `arm64 / Universal` | Standalone `.app` archive. Unzip and drag to `/Applications`. |
 
 ---
 
-## ✨ Key Features
+## Architecture
 
-1. **Top Screen Dynamic Island & Floating Mascot**:
-   - Anchored at top center or viewable as a floating desktop app.
-   - Animated SVG mascot whose pupils follow your cursor across the screen.
-   - Automatic mood transitions: `idle` breathing, `working` HUD coding, `alert` permission attention, `happy` celebration bounce.
+```mermaid
+flowchart TD
+    subgraph UI ["Desktop Display Interface"]
+        Notch["Top-Center Screen Island Notch"]
+        Mascot["Gaze-Tracking Vector Mascot"]
+        Approval["Permission Approval Gate Cards"]
+        AgentView["Multi-File Agent Workspace"]
+    end
 
-2. **In-Pill Permission Approvals & Questions**:
-   - `[ Allow ]`, `[ Deny ]`, `[ Always ]` buttons embedded right in the island pill.
-   - Instant response sent back to the waiting agent terminal via HTTP or Unix domain socket.
+    subgraph Core ["Local Backend Daemon (Port 4141)"]
+        Server["Express HTTP / SSE Router"]
+        IPC["Unix Socket Listener (/tmp/coucou.sock)"]
+        AgentCore["Agent Tool Orchestrator"]
+        Storage["SQLite Audit Store (~/.loly/loly.db)"]
+    end
 
-3. **Direct Google Gemini Assistant**:
-   - Instant streaming typewriter chat powered by **Gemini 2.5 Flash**.
-   - Synchronized mascot mouth flapping during speech synthesis.
-   - In-chat dynamic model selector (`gemini-2.5-flash`, `gemini-1.5-flash`, `gemini-1.5-pro`, `gemini-2.0-flash-exp`).
-   - Drag-and-drop file inspection for PDFs, code, docs, and images.
+    subgraph Intelligence ["Dual Intelligence Engine"]
+        ChromeAI["On-Device Chrome Built-in AI (Prompt API)"]
+        GeminiCloud["Google Gemini 2.5 Flash / Pro API"]
+    end
 
-4. **Procedural Lo-Fi Focus Music Player**:
-   - 4 ambient soundscapes: `Midnight Lo-Fi`, `Cyber Synthwave`, `Chill Coffee Beats`, `Rain Ambient Focus`.
-   - Synthesized natively via the **Web Audio API** (zero external MP3 downloads; zero latency).
-   - Animated spinning vinyl disc and volume controls.
+    subgraph External ["Developer Workflow"]
+        Dev["Developer Workspace"]
+        ExternalAgents["External Agents (Gemini CLI / Antigravity)"]
+    end
 
-5. **Live Digital Clock & Weather Widget**:
-   - Real-time digital clock in the header.
-   - Live temperature and weather condition fetched via `/api/weather` with custom city customization in Settings.
-
-6. **Quick App Launcher**:
-   - One-click launch chips for **Terminal**, **VS Code**, **Web Browser**, and **File Manager**.
-
-7. **Local SQLite Audit Storage**:
-   - Built on native `node:sqlite`. Zero external C dependencies.
-   - Logs sessions, events, approvals, and chat logs locally in `~/.loly/loly.db` (Linux) or `%USERPROFILE%\.loly\loly.db` (Windows).
+    ExternalAgents -->|HTTP POST / Unix Socket| IPC
+    IPC --> Server
+    Dev <-->|Global Hotkey / Cursor| Notch
+    Notch --> AgentView
+    AgentView --> AgentCore
+    AgentCore --> Intelligence
+    AgentCore --> Storage
+    AgentCore --> Approval
+    Approval -->|Allow / Deny| AgentCore
+```
 
 ---
 
-## 🚀 How to Run Locally
+## Core Capabilities
 
-You can run Loly Companion directly from source using Node.js:
+### 1. Hardware Screen Notch & Floating Drawer
+- **Anchored Geometry**: Positioned flush against the upper display boundary with an ergonomic 530px hardware cutout and fluid spring expansion animation.
+- **Dynamic Gaze Mascot**: Mathematical coordinate calculation dynamically orients the anime mascot's pupil vector toward current cursor positions.
+- **Three-Dot Menu Navigation**: Consolidates agent mode selectors, model configurations, and workspace directories into a compact, clean interface.
+
+### 2. Autonomous Agent Execution Engine
+- **Filesystem Tools**: Exposes granular tools (`read_file`, `write_file`, `list_directory`, `run_command`, `git_status`) directly to Gemini models.
+- **Workspace Sandboxing**: Restricts file modifications strictly within validated repository roots to protect against directory traversal attacks.
+- **Streaming Response**: Real-time server-sent events (SSE) stream tool progress, execution outputs, and file diffs as they materialize.
+
+### 3. Integrated Security & Terminal Approvals
+- **IPC & HTTP Hooks**: External agents stream status events and approval requests via local Unix socket (`/tmp/coucou.sock`) or HTTP POST (`/api/hook`).
+- **Interactive Decision Cards**: One-click approval cards grant developers decisive governance over terminal command execution.
+
+### 4. Audio Engine & Local Storage
+- **Procedural Ambient Synthesizer**: Web Audio API chords tailored for deep concentration (*Midnight Lo-Fi*, *Cyber Synthwave*, *Chill Coffee*, *Rain Focus*).
+- **IndexedDB Workstation**: Import personal audio files locally without third-party streaming dependencies or cloud infrastructure.
+
+---
+
+## Quickstart
 
 ### Prerequisites
-- **Node.js** (v20+ or v22+ recommended)
-- **npm** (included with Node.js)
-- Modern web browser (Chrome, Edge, Firefox, Brave)
+- Node.js 20.0.0 or higher
+- npm 9.0.0 or higher
 
-### 1. Clone the Repository
+### 1. Clone & Install
 ```bash
 git clone https://github.com/PAIN-hub/Loly_Companion.git
 cd Loly_Companion
-```
-
-### 2. Install Dependencies
-```bash
 npm install
 ```
 
-### 3. Launch Option A: Web Browser Mode
-```bash
-npm start
-```
-Open **`http://127.0.0.1:4141`** in your browser.
-
-### 4. Launch Option B: Native Desktop Dynamic Island (Electron)
+### 2. Desktop Mode (Electron)
 ```bash
 npm run electron
 ```
-This automatically boots the background daemon and displays the transparent, always-on-top hardware notch at the top center of your screen.
-- Toggle Island hotkey: `Ctrl + Shift + L` (Windows/Linux) or `Cmd + Shift + L` (macOS).
+- Hotkey: Press `Ctrl + Shift + L` (Windows/Linux) or `Cmd + Shift + L` (macOS) to toggle island visibility at any time.
+
+### 3. Web Mode
+```bash
+npm start
+```
+Navigate to [`http://127.0.0.1:4141`](http://127.0.0.1:4141) in your browser.
 
 ---
 
-## 🔑 Google Gemini API Setup
+## API Configuration
 
-Loly connects to the **Google Gemini API** to power chat responses and automated command safety reviews.
+To enable Gemini capabilities, configure your API credentials through either of the following methods:
 
-> 📘 **Detailed Guide**: Please read the complete step-by-step walkthrough in [**`GEMINI_API_GUIDE.md`**](GEMINI_API_GUIDE.md).
-
-### Quick Setup:
-1. Visit [Google AI Studio](https://aistudio.google.com/app/apikey) and create a free API key (1,500 requests/day free tier).
-2. Open Loly, click the **Gear icon (⚙)** to open **Settings**.
-3. Paste your key in the **Gemini API Key** field and click **Save Settings**.
-4. Alternatively, export your key in your terminal before running:
+1. **In-App Interface**: Access Settings via the menu gear icon, input your API key, and select **Save Settings**.
+2. **Environment Variable**:
    ```bash
-   export GEMINI_API_KEY="AIzaSyYourSecretKey"
+   export GEMINI_API_KEY="your-gemini-api-key"
    npm start
    ```
 
+Refer to the [`Gemini Setup Guide`](GEMINI_API_GUIDE.md) for detailed configuration options.
+
 ---
 
-## 🔌 Connecting AI Agents
+## Agent Integration Hook
 
-Loly provides a universal hook bus that any agent, script, or CI pipeline can send events to:
+External agents and scripts can dispatch real-time events to Loly Companion via HTTP or Unix domain socket:
 
-### 1. HTTP POST (Any Platform)
 ```bash
 curl -X POST http://127.0.0.1:4141/api/hook \
   -H "Content-Type: application/json" \
   -d '{
     "coucou_agent": "gemini-cli",
     "event_type": "approval_request",
-    "title": "Bash Command Approval",
-    "target": "npm run build",
+    "title": "Bash Command Approval Required",
+    "target": "npm test -- --coverage",
     "requires_approval": true
   }'
 ```
 
-### 2. Unix Domain Socket (Linux / macOS)
-```bash
-echo '{"coucou_agent":"antigravity","action":"git commit -m \"feat: done\""}' | socat - UNIX-CONNECT:/tmp/coucou.sock
-```
+---
 
-### 3. Built-in Test Simulator
-Test real-time event ingestion by running:
-```bash
-npm run simulate
-```
+## Security & Data Privacy
+
+- **Local Storage**: Configuration parameters, audit logs, and session records are maintained exclusively in local SQLite storage (`~/.loly/loly.db`).
+- **Zero Cloud Telemetry**: No usage metrics, telemetry packets, or diagnostic analytics are transmitted.
+- **Isolated Credentials**: API keys remain securely inside local configuration and are never transmitted to unauthorized endpoints or committed to version control.
 
 ---
 
-## 🎨 Dual Theme Architecture
+## License
 
-Loly Companion features two carefully tuned themes:
-- **Clean White Mode**: Elegant ceramic white island pill, slate-900 typography, light neutral borders, and high contrast.
-- **Pitch-Black OLED Mode**: Deepest pure pitch-black (`#000000`) with glass rim reflection matching hardware notches.
-
-Switch between themes with 1 click directly in the island header or in Settings.
-
----
-
-## 🔒 Privacy & Security Standards
-
-- **100% Local & Private**: No analytics, telemetry, or user data are ever sent to remote tracking servers.
-- **Local SQLite DB**: Session data and event audits are stored strictly on your local disk (`~/.loly/loly.db`).
-- **Secret Protection**: `.gitignore` strictly protects `.env`, `credentials.json`, `loly.db`, and all private tokens from accidental commits.
-- **Safe Approvals**: Destructive terminal actions require manual user confirmation before the waiting terminal proceeds.
-
----
-
-## 🛠️ Contributing & Development
-
-Contributions, bug reports, and suggestions are welcome!
-
-1. Fork the repository on GitHub.
-2. Create a feature branch: `git checkout -b feature/awesome-feature`.
-3. Commit your changes: `git commit -m "feat: add awesome feature"`.
-4. Push to your branch: `git push origin feature/awesome-feature`.
-5. Open a Pull Request.
-
----
-
-## 📄 License
-
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-<div align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/PAIN-hub">PAIN-hub</a> • Inspired by Coucou & modern screen notch companions.</sub>
-</div>
+This software is licensed under the [`MIT License`](LICENSE).
