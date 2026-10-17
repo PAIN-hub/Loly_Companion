@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/Icon.png" width="130" height="130" alt="Loly Companion Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);" />
+<img src="public/icon.png" width="130" height="130" alt="Loly Companion Logo" style="border-radius: 26px; box-shadow: 0 10px 30px rgba(0,0,0,0.18);" />
 
 # Loly Companion
 
