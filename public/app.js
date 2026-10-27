@@ -3,6 +3,29 @@
  * Layout matching exact Coucou hardware screenshots with automatic mascot reaction engine
  */
 
+import {
+  getAgentState,
+  commitAgentSettings,
+  clearAgentKeys,
+  getAgentConfig,
+  ensureBridgeSession,
+  runLolyAgentLoop,
+  resolveCurrentPendingPermission,
+  exportAgentSession,
+  clearAgentSession,
+  setStopController,
+  abortCurrentAgent,
+  setActiveProviderAndModel,
+  loadAgentHistory,
+  inputHistory,
+  bridge
+} from './loly-agent.js';
+import { listModels, PROVIDERS } from './providers.js';
+import { renderInline } from './render.js';
+import { ChatStore, createHistoryPanel } from './chat-history.js';
+import { openFolderPicker } from './folder-picker.js';
+import { mountBenchmark } from './benchmark.js';
+
 (function () {
   'use strict';
 
@@ -452,6 +475,11 @@
       this.volume = 0.7;
       this.currentObjectUrl = null;
       this.synthInterval = null;
+      this.audioCtx = null;
+      this.analyser = null;
+      this.dataArray = null;
+      this.visualizerFrame = null;
+      this.currentTrackName = 'Midnight Lo-Fi Beats';
 
       this._cacheDom();
       this._bindEvents();
@@ -475,12 +503,40 @@
       this.emptyMsg = document.getElementById('emptyPlaylistMsg');
       this.fullEq = document.getElementById('fullEqualizer');
       this.pillWave = document.getElementById('pillWave');
+
+      // Quick Controls on Floating Island Dropdown
+      this.quickCard = document.getElementById('dropdownMusicCard');
+      this.quickTitle = document.getElementById('quickTrackTitle');
+      this.quickStatus = document.getElementById('quickTrackStatus');
+      this.quickEq = document.getElementById('quickEqualizer');
+      this.quickPlayBtn = document.getElementById('btnQuickPlay');
+      this.quickStopBtn = document.getElementById('btnQuickStop');
+      this.quickPrevBtn = document.getElementById('btnQuickPrev');
+      this.quickNextBtn = document.getElementById('btnQuickNext');
+      this.quickToggleBtn = document.getElementById('btnQuickMusicToggle');
+      this.quickPlayIcon = document.getElementById('quickPlayIcon');
     }
 
     _bindEvents() {
       if (this.playBtn) this.playBtn.addEventListener('click', () => this.togglePlay());
       if (this.nextBtn) this.nextBtn.addEventListener('click', () => this.nextTrack());
       if (this.prevBtn) this.prevBtn.addEventListener('click', () => this.prevTrack());
+
+      // Quick Controls
+      if (this.quickPlayBtn) this.quickPlayBtn.addEventListener('click', () => this.togglePlay());
+      if (this.quickStopBtn) this.quickStopBtn.addEventListener('click', () => this.stop());
+      if (this.quickPrevBtn) this.quickPrevBtn.addEventListener('click', () => this.prevTrack());
+      if (this.quickNextBtn) this.quickNextBtn.addEventListener('click', () => this.nextTrack());
+
+      if (this.quickToggleBtn) {
+        this.quickToggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const dropdown = document.getElementById('chatHeaderDropdown');
+          if (dropdown) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+          }
+        });
+      }
 
       if (this.audioElem) {
         this.audioElem.addEventListener('timeupdate', () => {
@@ -565,7 +621,7 @@
         btnClear.addEventListener('click', async () => {
           if (confirm('Clear local audio library?')) {
             await this.db.clearAll();
-            this.pause();
+            this.stop();
             await this.loadLibrary();
           }
         });
@@ -580,6 +636,108 @@
           this.playAmbientPreset(idx);
         });
       });
+    }
+
+    _initAudioVisualizer() {
+      if (this.analyser) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        this.audioCtx = new AudioCtx();
+        this.analyser = this.audioCtx.createAnalyser();
+        this.analyser.fftSize = 64;
+        this.analyser.smoothingTimeConstant = 0.8;
+        this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
+
+        if (this.audioElem) {
+          try {
+            this.sourceNode = this.audioCtx.createMediaElementSource(this.audioElem);
+            this.sourceNode.connect(this.analyser);
+            this.analyser.connect(this.audioCtx.destination);
+          } catch (e) {
+            // Already connected or cross-origin
+          }
+        }
+      } catch (err) {
+        console.warn('[Audio Visualizer] Init notice:', err);
+      }
+    }
+
+    _startRgbVisualizer() {
+      if (this.visualizerFrame) cancelAnimationFrame(this.visualizerFrame);
+
+      const loop = () => {
+        if (!this.isPlaying) {
+          this._resetRgbVisualizer();
+          return;
+        }
+
+        if (this.analyser && this.dataArray) {
+          this.analyser.getByteFrequencyData(this.dataArray);
+          // Frequencies: Bass, Mid, Treble
+          const bass = (this.dataArray[1] + this.dataArray[2] + this.dataArray[3]) / 3;
+          const mid = (this.dataArray[6] + this.dataArray[7] + this.dataArray[8]) / 3;
+          const treble = (this.dataArray[14] + this.dataArray[15] + this.dataArray[16]) / 3;
+
+          const r = Math.min(255, Math.floor(bass * 1.15 + 30));
+          const g = Math.min(255, Math.floor(mid * 0.95 + 25));
+          const b = Math.min(255, Math.floor(treble * 1.3 + 55));
+          const glow = Math.max(4, Math.floor((bass / 255) * 16));
+          const rgbColor = `rgb(${r}, ${g}, ${b})`;
+          const rgbGlow = `0 0 ${glow}px rgba(${r}, ${g}, ${b}, 0.65)`;
+
+          document.documentElement.style.setProperty('--music-rgb-color', rgbColor);
+          document.documentElement.style.setProperty('--music-rgb-glow', rgbGlow);
+
+          document.querySelectorAll('.music-reactive-border').forEach(el => {
+            el.style.borderColor = rgbColor;
+            el.style.boxShadow = rgbGlow;
+          });
+
+          // Screen Island reaction
+          const island = document.getElementById('screenIsland') || document.querySelector('.screen-island');
+          if (island) {
+            island.style.borderColor = `rgba(${r}, ${g}, ${b}, 0.75)`;
+            island.style.boxShadow = `0 12px 36px rgba(0, 0, 0, 0.45), 0 0 ${glow + 4}px rgba(${r}, ${g}, ${b}, 0.45)`;
+          }
+
+          if (this.quickEq) {
+            const bars = this.quickEq.querySelectorAll('span');
+            bars.forEach((bar, i) => {
+              const val = this.dataArray[i * 2 + 1] || 20;
+              const h = Math.max(3, Math.min(18, Math.floor((val / 255) * 18)));
+              bar.style.height = `${h}px`;
+              bar.style.background = rgbColor;
+            });
+          }
+        }
+
+        this.visualizerFrame = requestAnimationFrame(loop);
+      };
+
+      this.visualizerFrame = requestAnimationFrame(loop);
+    }
+
+    _resetRgbVisualizer() {
+      if (this.visualizerFrame) {
+        cancelAnimationFrame(this.visualizerFrame);
+        this.visualizerFrame = null;
+      }
+      document.querySelectorAll('.music-reactive-border').forEach(el => {
+        el.style.borderColor = '';
+        el.style.boxShadow = '';
+      });
+      const island = document.getElementById('screenIsland') || document.querySelector('.screen-island');
+      if (island) {
+        island.style.borderColor = '';
+        island.style.boxShadow = '';
+      }
+      if (this.quickEq) {
+        this.quickEq.querySelectorAll('span').forEach(bar => {
+          bar.style.height = '4px';
+          bar.style.background = '';
+        });
+      }
     }
 
     _formatTime(sec) {
@@ -649,8 +807,8 @@
         li.innerHTML = `
           <span>${track.name}</span>
           <div>
-            <button type="button" class="btn btn-subtle btn-play-item">▶</button>
-            <button type="button" class="btn btn-subtle btn-del-item">&times;</button>
+            <button type="button" class="btn btn-subtle btn-play-item" title="Play">▶</button>
+            <button type="button" class="btn btn-subtle btn-del-item" title="Remove">&times;</button>
           </div>
         `;
 
@@ -663,49 +821,102 @@
       });
     }
 
-    playTrack(index) {
-      if (!this.tracks || !this.tracks.length) return;
+    async playTrack(index) {
+      if (!this.tracks || !this.tracks.length) {
+        this.playAmbientPreset(0);
+        return;
+      }
+
+      this._initAudioVisualizer();
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        try { await this.audioCtx.resume(); } catch (e) {}
+      }
+
       this.currentIndex = (index + this.tracks.length) % this.tracks.length;
       const track = this.tracks[this.currentIndex];
 
       clearInterval(this.synthInterval);
-      if (this.currentObjectUrl) URL.revokeObjectURL(this.currentObjectUrl);
+      if (this.currentObjectUrl) {
+        try { URL.revokeObjectURL(this.currentObjectUrl); } catch (e) {}
+        this.currentObjectUrl = null;
+      }
 
-      this.currentObjectUrl = URL.createObjectURL(track.blob);
-      this.audioElem.src = this.currentObjectUrl;
-      this.audioElem.volume = this.volume;
+      try {
+        let blob = track.blob;
+        if (!(blob instanceof Blob)) {
+          if (track.dataUrl || (typeof blob === 'string' && blob.startsWith('data:'))) {
+            this.audioElem.src = track.dataUrl || blob;
+          } else if (blob instanceof ArrayBuffer || ArrayBuffer.isView(blob)) {
+            blob = new Blob([blob], { type: track.type || 'audio/mpeg' });
+            this.currentObjectUrl = URL.createObjectURL(blob);
+            this.audioElem.src = this.currentObjectUrl;
+          } else if (typeof blob === 'string') {
+            const res = await fetch(blob);
+            const b = await res.blob();
+            this.currentObjectUrl = URL.createObjectURL(b);
+            this.audioElem.src = this.currentObjectUrl;
+          } else {
+            this.playAmbientPreset(0);
+            return;
+          }
+        } else {
+          this.currentObjectUrl = URL.createObjectURL(blob);
+          this.audioElem.src = this.currentObjectUrl;
+        }
 
-      this.audioElem.play().then(() => {
+        this.audioElem.volume = this.volume;
+        await this.audioElem.play();
         this.isPlaying = true;
-        this._updateUiActive(track.name, 'Internal Storage Audio');
-      }).catch(() => {});
+        this.currentTrackName = track.name;
+        this._updateUiActive(track.name, 'Local Storage Audio');
+        this._startRgbVisualizer();
+      } catch (err) {
+        console.warn('[Music Player] Local playback error, falling back to ambient preset:', err);
+        this.playAmbientPreset(0);
+      }
     }
 
     playAmbientPreset(idx) {
+      this._initAudioVisualizer();
+      if (this.audioCtx && this.audioCtx.state === 'suspended') {
+        try { this.audioCtx.resume(); } catch (e) {}
+      }
+      const ctx = this.audioCtx || new (window.AudioContext || window.webkitAudioContext)();
       const preset = AMBIENT_PRESETS[idx] || AMBIENT_PRESETS[0];
-      const AudioCtx = window.AudioContext || window.webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
 
-      if (this.audioElem) this.audioElem.pause();
+      if (this.audioElem) {
+        this.audioElem.pause();
+        this.audioElem.currentTime = 0;
+      }
       this.isPlaying = true;
+      this.currentTrackName = preset.title;
       this._updateUiActive(preset.title, 'Ambient Focus Synthesizer');
+      this._startRgbVisualizer();
 
       clearInterval(this.synthInterval);
       const chord = () => {
         if (!this.isPlaying) return;
         const root = preset.rootFreq;
         [root, root * 1.25, root * 1.5, root * 1.875].forEach(f => {
-          const osc = ctx.createOscillator();
-          const gain = ctx.createGain();
-          osc.frequency.value = f;
-          gain.gain.setValueAtTime(0.001, ctx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.05 * this.volume, ctx.currentTime + 1.2);
-          gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.8);
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 5.0);
+          try {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.frequency.value = f;
+            gain.gain.setValueAtTime(0.001, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.06 * this.volume, ctx.currentTime + 1.2);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 4.8);
+            osc.connect(gain);
+            if (this.analyser) {
+              gain.connect(this.analyser);
+              this.analyser.connect(ctx.destination);
+            } else {
+              gain.connect(ctx.destination);
+            }
+            osc.start();
+            osc.stop(ctx.currentTime + 5.0);
+          } catch (e) {
+            console.warn('[Synthesizer] Note creation warning:', e);
+          }
         });
       };
       chord();
@@ -728,10 +939,21 @@
       this.isPlaying = false;
       clearInterval(this.synthInterval);
       if (this.audioElem) this.audioElem.pause();
-      if (this.playBtn) this.playBtn.textContent = '▶';
-      if (this.disc) this.disc.classList.remove('spinning');
-      if (this.fullEq) this.fullEq.classList.remove('active');
-      if (this.pillWave) this.pillWave.classList.remove('active');
+      this._updateUiInactive('Paused');
+      this._resetRgbVisualizer();
+    }
+
+    stop() {
+      this.isPlaying = false;
+      clearInterval(this.synthInterval);
+      if (this.audioElem) {
+        this.audioElem.pause();
+        this.audioElem.currentTime = 0;
+      }
+      if (this.progressBar) this.progressBar.value = 0;
+      if (this.currentTimeElem) this.currentTimeElem.textContent = '00:00';
+      this._updateUiInactive('Stopped');
+      this._resetRgbVisualizer();
     }
 
     nextTrack() {
@@ -751,12 +973,38 @@
     }
 
     _updateUiActive(title, artist) {
-      if (title && this.mainTitle) this.mainTitle.textContent = title;
-      if (artist && this.mainArtist) this.mainArtist.textContent = artist;
+      if (title) {
+        if (this.mainTitle) this.mainTitle.textContent = title;
+        if (this.quickTitle) this.quickTitle.textContent = title;
+      }
+      if (artist) {
+        if (this.mainArtist) this.mainArtist.textContent = artist;
+      }
+      if (this.quickStatus) this.quickStatus.textContent = `${artist || 'Playing'} • Active`;
       if (this.playBtn) this.playBtn.textContent = '⏸';
+      if (this.quickPlayIcon) {
+        this.quickPlayIcon.innerHTML = '<rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>';
+      }
       if (this.disc) this.disc.classList.add('spinning');
       if (this.fullEq) this.fullEq.classList.add('active');
       if (this.pillWave) this.pillWave.classList.add('active');
+      if (this.quickToggleBtn) this.quickToggleBtn.classList.add('music-playing');
+    }
+
+    _updateUiInactive(statusText = 'Paused') {
+      if (this.playBtn) this.playBtn.textContent = '▶';
+      if (this.quickPlayIcon) {
+        this.quickPlayIcon.innerHTML = '<polygon points="5 3 19 12 5 21 5 3"/>';
+      }
+      if (this.quickStatus) this.quickStatus.textContent = `Focus Beats • ${statusText}`;
+      if (this.disc) this.disc.classList.remove('spinning');
+      if (this.fullEq) this.fullEq.classList.remove('active');
+      if (this.pillWave) this.pillWave.classList.remove('active');
+      if (this.quickToggleBtn) this.quickToggleBtn.classList.remove('music-playing');
+    }
+
+    getCurrentTrackName() {
+      return this.currentTrackName || 'Focus Beats';
     }
   }
 
@@ -817,6 +1065,7 @@
         }).catch(() => {});
       }
     }
+    const setDrawerState = (expand) => setExpanded(expand);
 
     // Start expanded initially to match screenshot
     setExpanded(true);
@@ -1029,7 +1278,14 @@
         <div class="bubble-content">
           <div class="bubble-header-name">Loly Companion</div>
           <div class="agent-steps-list" style="display: none;"></div>
-          <div class="bubble-text">Thinking...</div>
+          <div class="bubble-text">
+            <div class="agent-thinking-bubble" style="margin: 0; padding: 2px 4px; border: none; background: transparent;">
+              <span class="thinking-dot"></span>
+              <span class="thinking-dot"></span>
+              <span class="thinking-dot"></span>
+              <span style="font-size: 11.5px; opacity: 0.75; margin-left: 5px;">Thinking...</span>
+            </div>
+          </div>
         </div>
       `;
       chatBubblesStream.appendChild(bubble);
@@ -1103,9 +1359,35 @@
       };
     }
 
+    function appendErrorBubble(title, message, actionText = null, actionFn = null) {
+      if (!chatBubblesStream) return;
+      const card = document.createElement('div');
+      card.className = 'agent-error-card';
+      card.innerHTML = `
+        <div class="error-head">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>${escapeHtml(title)}</span>
+        </div>
+        <div class="error-body">${escapeHtml(message)}</div>
+      `;
+      if (actionText && typeof actionFn === 'function') {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-error-action';
+        btn.textContent = actionText;
+        btn.addEventListener('click', actionFn);
+        card.appendChild(btn);
+      }
+      chatBubblesStream.appendChild(card);
+      chatBubblesStream.scrollTop = chatBubblesStream.scrollHeight;
+    }
+
     // Burger Menu & Floating Options Dropdown Controls
     const btnChatMenuToggle = document.getElementById('btnChatMenuToggle');
-    const notchBurgerBtn = document.getElementById('notchBurgerBtn');
     const chatHeaderDropdown = document.getElementById('chatHeaderDropdown');
     const btnCloseChatDropdown = document.getElementById('btnCloseChatDropdown');
     const dropdownAgentModeToggle = document.getElementById('dropdownAgentModeToggle');
@@ -1129,16 +1411,6 @@
       });
     }
 
-    if (notchBurgerBtn) {
-      notchBurgerBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        resetInactivityTimer();
-        if (islandWrapperEl && !islandWrapperEl.classList.contains('is-expanded')) {
-          setDrawerState(true);
-        }
-        setTimeout(() => toggleChatDropdown(false), 200);
-      });
-    }
 
     if (btnCloseChatDropdown) {
       btnCloseChatDropdown.addEventListener('click', (e) => {
@@ -1179,37 +1451,73 @@
       });
     }
 
-    // Sync Dropdown Model Select
+    // Sync Dropdown Model Select to Agent State & Settings
+    function syncDropdownModelSelect() {
+      if (!dropdownModelSelect) return;
+      const cfg = getAgentConfig();
+      const combinedVal = `${cfg.provider}:${cfg.model}`;
+      let matched = false;
+      for (const opt of dropdownModelSelect.options) {
+        if (opt.value === combinedVal) {
+          dropdownModelSelect.value = opt.value;
+          if (chatModelSelect) chatModelSelect.value = opt.value;
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) {
+        for (const opt of dropdownModelSelect.options) {
+          if (opt.value.startsWith(`${cfg.provider}:`)) {
+            dropdownModelSelect.value = opt.value;
+            if (chatModelSelect) chatModelSelect.value = opt.value;
+            matched = true;
+            break;
+          }
+        }
+      }
+    }
+
     if (dropdownModelSelect) {
       dropdownModelSelect.addEventListener('change', (e) => {
         const val = e.target.value;
-        const chatModelSelect = document.getElementById('chatModelSelect');
-        if (chatModelSelect) {
-          chatModelSelect.value = val;
-          localStorage.setItem('loly_active_model', val);
-          if (val === 'chrome-builtin-only') {
-            updateAiEngineBadge(true, 'Nano Local (Strict)');
-          } else if (val === 'chrome-builtin-auto') {
-            checkChromeBuiltinAI();
-          } else {
-            updateAiEngineBadge(false, 'Gemini Cloud');
-          }
+        let [provider, model] = val.split(':');
+        if (!model) {
+          if (val.startsWith('chrome')) { provider = 'chrome'; model = 'gemini-nano'; }
+          else if (val.startsWith('gemini')) { provider = 'gemini'; model = val; }
+          else if (val.startsWith('anthropic')) { provider = 'anthropic'; model = 'claude-3-7-sonnet-20250219'; }
+          else if (val.startsWith('openai')) { provider = 'openai'; model = 'gpt-4o'; }
+          else { provider = 'gemini'; model = 'gemini-3.5-flash'; }
         }
+        setActiveProviderAndModel(provider, model);
+        localStorage.setItem('loly_active_model', val);
+        if (chatModelSelect) chatModelSelect.value = val;
+        agentDraft = getAgentState();
+        refreshSettingsFields();
+        updateActiveProviderLabel();
+        if (provider === 'chrome') {
+          updateAiEngineBadge(true, 'Nano On-Device');
+        } else {
+          updateAiEngineBadge(false, `${PROVIDERS[provider]?.label || provider}`);
+        }
+        showMascotSpeech(`Model: ${model}`, 2500);
       });
     }
 
     // Load active workspace directory
+    let currentWorkspacePath = '';
     async function loadWorkspaceInfo() {
       try {
         const res = await fetch('/api/agent/workspace');
         if (res.ok) {
           const data = await res.json();
-          if (data.workspaceDir) {
-            const parts = data.workspaceDir.split(/[\/\\]/);
-            const folderName = parts[parts.length - 1] || data.workspaceDir;
+          const dir = data.workspaceDir || data.workspace;
+          if (dir) {
+            currentWorkspacePath = dir;
+            const parts = dir.split(/[\/\\]/);
+            const folderName = parts[parts.length - 1] || dir;
             if (workspaceDirLabel) workspaceDirLabel.textContent = folderName;
             if (dropdownWorkspaceLabel) dropdownWorkspaceLabel.textContent = folderName;
-            if (btnWorkspacePill) btnWorkspacePill.title = `Active workspace: ${data.workspaceDir}\nClick to change folder`;
+            if (btnWorkspacePill) btnWorkspacePill.title = `Active workspace: ${dir}\nClick to change folder`;
           }
         }
       } catch (_) {}
@@ -1217,28 +1525,31 @@
     loadWorkspaceInfo();
 
     async function promptChangeWorkspace() {
-      const current = workspaceDirLabel ? workspaceDirLabel.textContent : '';
-      const newPath = prompt('Enter absolute path to workspace folder for Loly to edit code in:', current);
-      if (newPath && newPath.trim()) {
-        try {
-          const res = await fetch('/api/agent/workspace', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ workspaceDir: newPath.trim() })
-          });
-          const data = await res.json();
-          if (data.workspaceDir) {
-            const parts = data.workspaceDir.split(/[\/\\]/);
-            const folderName = parts[parts.length - 1] || data.workspaceDir;
-            if (workspaceDirLabel) workspaceDirLabel.textContent = folderName;
-            if (dropdownWorkspaceLabel) dropdownWorkspaceLabel.textContent = folderName;
-            showMascotSpeech(`Workspace: ${folderName}`);
-          } else if (data.error) {
-            alert('Failed to set workspace: ' + data.error);
-          }
-        } catch (err) {
-          alert('Error updating workspace: ' + err.message);
+      const newPath = await openFolderPicker({ startPath: currentWorkspacePath, title: 'Choose workspace folder' });
+      if (!newPath) return;
+      try {
+        const res = await fetch('/api/agent/workspace', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ workspaceDir: newPath })
+        });
+        const data = await res.json();
+        const dir = data.workspaceDir || data.workspace;
+        if (dir) {
+          currentWorkspacePath = dir;
+          const parts = dir.split(/[\/\\]/);
+          const folderName = parts[parts.length - 1] || dir;
+          if (workspaceDirLabel) workspaceDirLabel.textContent = folderName;
+          if (dropdownWorkspaceLabel) dropdownWorkspaceLabel.textContent = folderName;
+          if (btnWorkspacePill) btnWorkspacePill.title = `Active workspace: ${dir}\nClick to change folder`;
+          showMascotSpeech(`Workspace: ${folderName}`, 3500);
+          const b = appendLolyBubble();
+          if (b) b.setText(`Active workspace switched to: ${dir}`);
+        } else if (data.error) {
+          appendErrorBubble('Workspace Error', data.error);
         }
+      } catch (err) {
+        appendErrorBubble('Workspace Error', err.message);
       }
     }
 
@@ -1265,12 +1576,29 @@
       });
 
       chatInput.addEventListener('keydown', (e) => {
+        if (!e.isComposing && !e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+          if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+            const val = e.key === 'ArrowUp' ? inputHistory.prev(chatInput.value) : inputHistory.next();
+            if (val !== null) {
+              e.preventDefault();
+              chatInput.value = val;
+              chatInput.setSelectionRange(val.length, val.length);
+              return;
+            }
+          }
+        }
         if (e.key === 'Enter') {
           e.preventDefault();
           sendChat();
         }
       });
     }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        abortCurrentAgent();
+      }
+    });
 
     // =========================================================================
     // CHROME BUILT-IN AI (PROMPT API / GEMINI NANO) & CLOUD GEMINI ENGINE
@@ -1348,286 +1676,271 @@
 
     checkChromeBuiltinAI();
 
-    if (btnSendChat) btnSendChat.addEventListener('click', sendChat);
+    let isAgentExecuting = false;
+
+    function setAgentExecutionState(running) {
+      isAgentExecuting = running;
+      if (islandPill) {
+        islandPill.classList.toggle('notch-chat-active', running);
+      }
+      if (btnSendChat) {
+        if (running) {
+          btnSendChat.classList.add('is-stopping');
+          btnSendChat.title = 'Stop agent execution (Escape)';
+          btnSendChat.innerHTML = `
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor">
+              <rect x="6" y="6" width="12" height="12" rx="2"/>
+            </svg>
+          `;
+        } else {
+          btnSendChat.classList.remove('is-stopping');
+          btnSendChat.title = 'Send message or run agent';
+          btnSendChat.innerHTML = `
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="12" y1="19" x2="12" y2="5"/>
+              <polyline points="5 12 12 5 19 12"/>
+            </svg>
+          `;
+        }
+      }
+      if (btnStopAgent) {
+        btnStopAgent.style.display = 'none';
+      }
+    }
+
+    if (btnSendChat) {
+      btnSendChat.addEventListener('click', () => {
+        if (isAgentExecuting) {
+          abortCurrentAgent();
+        } else {
+          sendChat();
+        }
+      });
+    }
+
+    if (btnStopAgent) {
+      btnStopAgent.addEventListener('click', abortCurrentAgent);
+    }
+
+    // =========================================================================
+    // CHAT HISTORY (persistent sessions with rename / delete)
+    // =========================================================================
+    const chatStore = new ChatStore();
+    const btnNewChat = document.getElementById('btnNewChat');
+    const btnChatHistory = document.getElementById('btnChatHistory');
+    const capsuleContainer = document.querySelector('.chat-capsule-container');
+
+    function clearConversationView() {
+      if (!chatBubblesStream) return;
+      [...chatBubblesStream.children].forEach((node) => {
+        if (!node.classList.contains('initial-welcome')) node.remove();
+      });
+      chatBubblesStream.scrollTop = 0;
+    }
+
+    function renderSessionMessages(session) {
+      clearConversationView();
+      for (const m of session.messages) {
+        if (m.role === 'user') {
+          appendUserBubble(m.text);
+        } else {
+          const bubble = appendLolyBubble();
+          if (bubble) {
+            bubble.textEl.replaceChildren();
+            renderInline(bubble.textEl, m.text);
+          }
+        }
+      }
+      if (chatBubblesStream) chatBubblesStream.scrollTop = chatBubblesStream.scrollHeight;
+    }
+
+    function openSession(session) {
+      loadAgentHistory(session.messages);
+      renderSessionMessages(session);
+      showMascotSpeech(`Opened: ${session.title}`.slice(0, 40), 2500);
+    }
+
+    function startNewChat() {
+      chatStore.clearActive();
+      clearAgentSession();
+      clearConversationView();
+      if (chatInput) chatInput.focus();
+      historyPanel?.refresh();
+    }
+
+    function canSwitchChat() {
+      if (!isAgentExecuting) return true;
+      showMascotSpeech('Stop the running agent before switching chats.', 3000);
+      return false;
+    }
+
+    const historyPanel = capsuleContainer ? createHistoryPanel({
+      container: capsuleContainer,
+      store: chatStore,
+      onSelect: openSession,
+      onNew: startNewChat,
+      onDeleted: (id, wasActive) => {
+        if (!wasActive) return;
+        if (isAgentExecuting) abortCurrentAgent();
+        startNewChat();
+      },
+      onToggle: (open) => { if (btnChatHistory) btnChatHistory.classList.toggle('is-active', open); },
+      canSwitch: canSwitchChat
+    }) : null;
+
+    if (btnChatHistory && historyPanel) {
+      btnChatHistory.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleChatDropdown(true);
+        historyPanel.toggle();
+      });
+    }
+    if (btnNewChat) {
+      btnNewChat.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (!canSwitchChat()) return;
+        startNewChat();
+        historyPanel?.close();
+      });
+    }
+
+    // Restore the last active conversation after a reload
+    if (chatStore.active && chatStore.active.messages.length) {
+      loadAgentHistory(chatStore.active.messages);
+      renderSessionMessages(chatStore.active);
+    }
+
+    // Model speed benchmark card (Settings > AI Providers)
+    mountBenchmark(document.getElementById('benchmarkMount'));
 
     async function sendChat() {
+      if (isAgentExecuting) {
+        abortCurrentAgent();
+        return;
+      }
+
       const text = chatInput ? chatInput.value.trim() : '';
       if (!text && !currentAttachedFile) return;
 
       if (chatInput) chatInput.value = '';
+      inputHistory.push(text);
+      const sessionId = chatStore.ensureActive().id;
+      chatStore.append(sessionId, 'user', text || '[Attached File]');
+      historyPanel?.refresh();
       appendUserBubble(text || '[Attached File]');
 
+      const cfg = getAgentConfig();
       const chatModelSelect = document.getElementById('chatModelSelect');
-      const model = chatModelSelect ? chatModelSelect.value : (localStorage.getItem('loly_active_model') || 'chrome-builtin-auto');
+      const activeModelChoice = chatModelSelect ? chatModelSelect.value : (localStorage.getItem('loly_active_model') || 'gemini');
 
-      const lolyBubble = appendLolyBubble();
-
-      // Trigger notch chat animation during processing
-      const islandPill = document.getElementById('islandPill');
-      if (islandPill) islandPill.classList.add('notch-chat-active');
-      const cleanupChatAnimation = () => {
-        if (islandPill) islandPill.classList.remove('notch-chat-active');
-      };
-
-      // Check if this is an autonomous coding task
-      const lower = text.toLowerCase();
-      const isCodingTask = isAgentMode ||
-        lower.includes('edit') || lower.includes('fix') || lower.includes('change') ||
-        lower.includes('code') || lower.includes('file') || lower.includes('folder') ||
-        lower.includes('refactor') || lower.includes('run') || lower.includes('script') ||
-        lower.includes('bug') || lower.includes('scan') || lower.includes('workspace');
-
-      if (isCodingTask && !currentAttachedFile) {
-        // Run Autonomous Coding Agent across files in workspace
-        loly.setExpression('working');
-        showMascotSpeech('Working on your codebase...', 6000);
-        loly.startSpeaking();
-
-        try {
-          const res = await fetch('/api/agent/run', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: text, model: (model && !model.startsWith('chrome-')) ? model : 'gemini-2.5-flash', maxTurns: 10 })
-          });
-
-          if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.error || `Agent error ${res.status}`);
-          }
-
-          const reader = res.body.getReader();
-          const decoder = new TextDecoder();
-          let buffer = '';
-          let finalReply = '';
-          const filesModifiedSet = new Set();
-
-          while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-
-            buffer += decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
-
-            for (const line of lines) {
-              const trimmed = line.trim();
-              if (!trimmed.startsWith('data:')) continue;
-              const dataStr = trimmed.slice(5).trim();
-              if (!dataStr) continue;
-              try {
-                const parsed = JSON.parse(dataStr);
-                if (parsed.error) throw new Error(parsed.error);
-                if (parsed.step && lolyBubble) {
-                  lolyBubble.addToolStep(parsed.step);
-                  if (parsed.step.name && (parsed.step.name === 'write_file' || parsed.step.name === 'edit_file')) {
-                    if (parsed.step.args && parsed.step.args.path) filesModifiedSet.add(parsed.step.args.path);
-                  }
-                }
-                if (parsed.done) {
-                  finalReply = parsed.reply || finalReply;
-                  if (parsed.toolExecutions && Array.isArray(parsed.toolExecutions)) {
-                    parsed.toolExecutions.forEach(te => {
-                      if (te.tool === 'write_file' || te.tool === 'edit_file') {
-                        if (te.args && te.args.path) filesModifiedSet.add(te.args.path);
-                      }
-                    });
-                  }
-                }
-              } catch (jsonErr) {
-                if (jsonErr.message && !jsonErr.message.includes('JSON')) throw jsonErr;
-              }
-            }
-          }
-
-          loly.stopSpeaking();
-          cleanupChatAnimation();
-
-          const replyText = finalReply || 'Code modification complete.';
-          if (lolyBubble) {
-            lolyBubble.setText(replyText);
-
-            if (filesModifiedSet.size > 0) {
-              const fileList = Array.from(filesModifiedSet);
-              const summaryBadge = document.createElement('div');
-              summaryBadge.className = 'agent-summary-badge';
-              summaryBadge.innerHTML = `<svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> <span>Modified ${fileList.length} file(s): ${escapeHtml(fileList.join(', '))}</span>`;
-              lolyBubble.bubble.querySelector('.bubble-content').appendChild(summaryBadge);
-            }
-          }
-
-          chatHistory.push({ role: 'user', content: text });
-          chatHistory.push({ role: 'assistant', content: replyText });
-
-          loly.setExpression('happy');
-          loly.triggerBounce();
-          showMascotSpeech(replyText.slice(0, 100), 5000);
-          playChimeSound(880, 0.25);
-          return;
-        } catch (agentErr) {
-          loly.stopSpeaking();
-          cleanupChatAnimation();
-          loly.setExpression('surprised');
-          if (lolyBubble) {
-            lolyBubble.setText(`Agent task error: ${agentErr.message}`);
-          }
-          showMascotSpeech('Oops! Had an issue editing the files.');
-          return;
-        }
-      }
-
-      // Standard Conversational Streaming Chat
-      chatHistory.push({ role: 'user', content: text });
-      loly.setExpression('thinking');
-
-      let fileData = null;
-      if (currentAttachedFile) {
-        fileData = {
-          name: currentAttachedFile.name,
-          type: currentAttachedFile.type,
-          content: currentAttachedFile.content
-        };
-        currentAttachedFile = null;
-        if (attachedFileChip) attachedFileChip.style.display = 'none';
-      }
-
-      // 1. Try Chrome Built-in AI if model is chrome-builtin-auto, chrome-builtin-only, or default
-      const isChromeOnly = (model === 'chrome-builtin-only');
-      const isAutoChrome = (!model || model === 'chrome-builtin-auto' || isChromeOnly);
-      if (isAutoChrome && !fileData) {
+      // 1. If strictly Chrome Built-in AI On-Device only is requested
+      if (activeModelChoice === 'chrome-builtin-only' && !currentAttachedFile) {
         const chromeAvailable = await checkChromeBuiltinAI();
         if (chromeAvailable) {
           try {
-            updateAiEngineBadge(true, isChromeOnly ? 'Nano (Strict)' : 'Nano (Streaming)');
             loly.setExpression('happy');
             loly.startSpeaking();
-
             const session = await getOrCreateChromeAiSession();
             let fullReply = '';
-
-            const promptPromise = (async () => {
-              if (session && typeof session.promptStreaming === 'function') {
-                const stream = session.promptStreaming(text);
-                for await (const chunk of stream) {
-                  fullReply = chunk;
-                  if (lolyBubble) lolyBubble.setText(fullReply);
-                }
-              } else if (session && typeof session.prompt === 'function') {
-                fullReply = await session.prompt(text);
-                if (lolyBubble) lolyBubble.setText(fullReply);
-              }
-              return fullReply;
-            })();
-
-            // Fail fast (3.5s) if Chrome AI is thinking forever / hanging
-            await Promise.race([
-              promptPromise,
-              new Promise((_, reject) => setTimeout(() => reject(new Error('Prompt API response timed out')), 3500))
-            ]);
-
-            if (fullReply) {
-              loly.stopSpeaking();
-              cleanupChatAnimation();
-              chatHistory.push({ role: 'assistant', content: fullReply });
-              loly.setExpression('happy');
-              loly.triggerBounce();
-              showMascotSpeech(fullReply.slice(0, 100), 4500);
-              playChimeSound(820, 0.2);
-              updateAiEngineBadge(true, 'Nano Local');
-              return;
+            const lolyBubble = appendLolyBubble();
+            const stream = session.promptStreaming ? session.promptStreaming(text) : [await session.prompt(text)];
+            for await (const chunk of stream) {
+              fullReply = chunk;
+              lolyBubble.setText(fullReply);
             }
+            loly.stopSpeaking();
+            loly.setExpression('happy');
+            loly.triggerBounce();
+            chatStore.append(sessionId, 'loly', fullReply);
+            historyPanel?.refresh();
+            showMascotSpeech(fullReply.slice(0, 100), 4500);
+            playChimeSound(820, 0.2);
+            return;
           } catch (chromeErr) {
-            console.warn('[Chrome Built-in AI] Failed or timed out:', chromeErr);
-            chromeAiSession = null;
-            if (isChromeOnly) {
-              loly.stopSpeaking();
-              cleanupChatAnimation();
-              loly.setExpression('surprised');
-              const msg = `⚡ Chrome Built-in AI error: ${chromeErr.message || 'Prompt failed'}.\n(Cloud fallback disabled for "Chrome Built-in AI Only" model).`;
-              if (lolyBubble) lolyBubble.setText(msg);
-              showMascotSpeech('Chrome AI error.', 3500);
-              return;
-            }
-            isChromeAiAvailable = false;
-            updateAiEngineBadge(false, 'Cloud Fallback');
+            console.warn('[Chrome Built-in AI] Failed:', chromeErr);
           }
-        } else if (isChromeOnly) {
-          // If strictly Chrome Built-in AI Only was requested but not available
-          loly.setExpression('surprised');
-          cleanupChatAnimation();
-          const errorMsg = '⚡ Chrome Built-in AI (Prompt API On-Device Only) is not available or enabled in this browser.\n\nFallback to Cloud Gemini is disabled for this model option.\n\nTo enable local Gemini Nano:\n1. Open Chrome or Chromium.\n2. Navigate to chrome://flags/#prompt-api-for-gemini-nano and set to "Enabled".\n3. Restart browser or switch model to "Chrome Built-in AI (Auto Fallback)" or a Gemini Cloud model.';
-          if (lolyBubble) lolyBubble.setText(errorMsg);
-          showMascotSpeech('Chrome AI not available.', 4000);
-          return;
         }
       }
 
-      // 2. Google Cloud Gemini API (Fallback or explicit cloud model)
-      updateAiEngineBadge(false, 'Gemini Cloud');
-      let fullReply = '';
-      try {
-        const res = await fetch('/api/gemini/chat-stream', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ messages: chatHistory, model: model === 'chrome-builtin-auto' ? 'gemini-3.5-flash' : model, fileData })
-        });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `HTTP error ${res.status}`);
-        }
-
-        loly.setExpression('happy');
-        loly.startSpeaking();
-
-        const reader = res.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
-
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-
-          buffer += decoder.decode(value, { stream: true });
-          const lines = buffer.split('\n');
-          buffer = lines.pop();
-
-          for (const line of lines) {
-            const trimmed = line.trim();
-            if (!trimmed.startsWith('data:')) continue;
-            const dataStr = trimmed.slice(5).trim();
-            if (!dataStr) continue;
-            try {
-              const parsed = JSON.parse(dataStr);
-              if (parsed.error) throw new Error(parsed.error);
-              if (parsed.chunk) {
-                fullReply += parsed.chunk;
-                if (lolyBubble) lolyBubble.setText(fullReply);
-              }
-              if (parsed.done && parsed.fullReply) {
-                fullReply = parsed.fullReply;
-                if (lolyBubble) lolyBubble.setText(fullReply);
-              }
-            } catch (jsonErr) {
-              if (jsonErr.message && !jsonErr.message.includes('JSON')) throw jsonErr;
-            }
+      // 2. Autonomous Multi-Provider Shell Agent Loop (Gemini, Claude, OpenAI, Chrome Nano)
+      if (cfg.requiresKey && !cfg.apiKey && !currentAttachedFile) {
+        appendErrorBubble(
+          `Missing API Key for ${cfg.label}`,
+          `To chat or execute autonomous commands, please provide an API key for ${cfg.label} in Settings.`,
+          'Open AI Settings',
+          () => {
+            setDrawerState(true);
+            switchView('settings');
+            const setApiTab = document.querySelector('[data-settab="set-api"]');
+            if (setApiTab) setApiTab.click();
+            const settingsOverlay = document.getElementById('settingsOverlay');
+            if (settingsOverlay) settingsOverlay.style.display = 'flex';
           }
-        }
+        );
+        showMascotSpeech(`Please enter an API key for ${cfg.label} in Settings.`, 4500);
+        return;
+      }
 
+      setAgentExecutionState(true);
+      loly.setExpression('working');
+      showMascotSpeech('Thinking & inspecting...', 4000);
+
+      const controller = new AbortController();
+      setStopController(controller);
+
+      try {
+        await runLolyAgentLoop({
+          prompt: text,
+          streamEl: chatBubblesStream,
+          callbacks: {
+            createLolyBubble: () => appendLolyBubble(),
+            onText: () => {
+              loly.startSpeaking();
+            },
+            onWaitingApproval: () => {
+              loly.setExpression('curious');
+              showMascotSpeech('Approval required to run command.', 4000);
+            },
+            onAgentText: (agentText) => {
+              chatStore.append(sessionId, 'loly', agentText);
+              historyPanel?.refresh();
+            },
+            onComplete: (reply) => {
+              loly.stopSpeaking();
+              loly.setExpression('happy');
+              loly.triggerBounce();
+              showMascotSpeech(reply ? reply.slice(0, 100) : 'Completed successfully!', 4500);
+              playChimeSound(880, 0.25);
+            },
+            onStepLimit: () => {
+              loly.stopSpeaking();
+              showMascotSpeech('Reached step limit. Send another directive to continue.');
+            }
+          },
+          signal: controller.signal
+        });
+        return;
+      } catch (agentErr) {
         loly.stopSpeaking();
-        cleanupChatAnimation();
-        chatHistory.push({ role: 'assistant', content: fullReply || 'Done.' });
-        loly.setExpression('happy');
-        loly.triggerBounce();
-        showMascotSpeech(fullReply.slice(0, 100), 4500);
-        playChimeSound(820, 0.2);
-      } catch (err) {
-        loly.stopSpeaking();
-        cleanupChatAnimation();
-        loly.setExpression('surprised');
-        if (lolyBubble) {
-          lolyBubble.setText(fullReply ? `${fullReply} [interrupted: ${err.message}]` : `Error: ${err.message}`);
+        if (agentErr?.name === 'AbortError') {
+          showMascotSpeech('Agent stopped by user.', 3000);
+          appendErrorBubble('Execution Stopped', 'Agent was cancelled by user directive.');
+        } else {
+          loly.setExpression('surprised');
+          appendErrorBubble(
+            'Agent Error',
+            agentErr.message || 'An error occurred during agent execution.',
+            'Open Settings',
+            () => openSettings()
+          );
+          showMascotSpeech(`Issue: ${(agentErr.message || '').slice(0, 50)}`, 4500);
         }
-        showMascotSpeech('Sorry, I ran into an error.');
+        return;
+      } finally {
+        setAgentExecutionState(false);
+        setStopController(null);
+        loly.stopSpeaking();
+        if (chatInput) chatInput.focus();
       }
     }
 
@@ -1676,10 +1989,7 @@
           chatModelSelect.selectedIndex = 0;
         }
 
-        localStorage.setItem('loly_active_model', chatModelSelect.value);
-        if (dropdownModelSelect && chatModelSelect.value) {
-          dropdownModelSelect.value = chatModelSelect.value;
-        }
+        syncDropdownModelSelect();
         updateModelBadgeFromSelect();
       } catch (err) {
         console.warn('Unable to load dynamic models:', err);
@@ -1851,39 +2161,147 @@
       btnUpdateCity.addEventListener('click', () => fetchWeather(cityInput.value.trim()));
     }
 
-    // Save API key
-    const btnSaveKey = document.getElementById('btnSaveKey');
+    // Multi-Provider Settings Engine (Gemini, Claude, OpenAI)
+    const setProvider = document.getElementById('setProvider');
     const apiKeyInput = document.getElementById('apiKeyInput');
+    const apiKeyHint = document.getElementById('apiKeyHint');
+    const btnSaveKey = document.getElementById('btnSaveKey');
     const keyStatusMsg = document.getElementById('keyStatusMsg');
-    if (btnSaveKey && apiKeyInput) {
-      // Check if server already has key
-      fetch('/api/config')
-        .then(r => r.json())
-        .then(cfg => {
-          if (cfg.hasApiKey && cfg.maskedKey) {
-            apiKeyInput.placeholder = `Active (${cfg.maskedKey})`;
-          }
-        })
-        .catch(() => {});
+    const setModelInput = document.getElementById('setModelInput');
+    const btnFetchModels = document.getElementById('btnFetchModels');
+    const modelList = document.getElementById('modelList');
+    const fetchModelsMsg = document.getElementById('fetchModelsMsg');
+    const setMaxSteps = document.getElementById('setMaxSteps');
+    const setTimeoutSec = document.getElementById('setTimeoutSec');
+    const setMaxTokens = document.getElementById('setMaxTokens');
+    const setRememberKeys = document.getElementById('setRememberKeys');
+    const btnClearSavedKeys = document.getElementById('btnClearSavedKeys');
+    const btnExportSessionMd = document.getElementById('btnExportSessionMd');
+    const btnExportSessionJson = document.getElementById('btnExportSessionJson');
 
-      btnSaveKey.addEventListener('click', async () => {
-        const keyVal = apiKeyInput.value.trim();
-        if (!keyVal) return;
-        try {
-          const res = await fetch('/api/config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ apiKey: keyVal })
-          });
-          if (res.ok && keyStatusMsg) {
-            localStorage.setItem('loly_gemini_api_key', keyVal);
-            keyStatusMsg.textContent = 'Key saved successfully!';
-            setTimeout(() => keyStatusMsg.textContent = '', 3000);
-            loadAvailableModels(true);
-          }
-        } catch (_) {}
+    let agentDraft = getAgentState();
+    let fetchController = null;
+
+    function refreshSettingsFields() {
+      const p = agentDraft.settings.provider;
+      if (setProvider) setProvider.value = p;
+      const isKeyless = PROVIDERS[p]?.requiresKey === false;
+      if (apiKeyInput) {
+        apiKeyInput.value = isKeyless ? '' : (agentDraft.keys[p] || '');
+        apiKeyInput.placeholder = PROVIDERS[p]?.keyHint || 'Enter API key...';
+        apiKeyInput.disabled = isKeyless;
+      }
+      if (apiKeyHint) {
+        apiKeyHint.textContent = isKeyless
+          ? 'Chrome Built-in Gemini Nano runs directly on-device. Zero API key or remote proxy required.'
+          : `Provider: ${PROVIDERS[p]?.label || p}. Keys are stored in ${agentDraft.settings.remember ? 'localStorage' : 'sessionStorage'}.`;
+      }
+      if (setModelInput) setModelInput.value = agentDraft.settings.models[p] || '';
+      if (setMaxSteps) setMaxSteps.value = agentDraft.settings.maxSteps;
+      if (setTimeoutSec) setTimeoutSec.value = agentDraft.settings.timeoutSec;
+      if (setMaxTokens) setMaxTokens.value = agentDraft.settings.maxTokens;
+      if (setRememberKeys) setRememberKeys.checked = agentDraft.settings.remember;
+      if (fetchModelsMsg) fetchModelsMsg.textContent = '';
+      updateActiveProviderLabel();
+      syncDropdownModelSelect();
+    }
+
+    function captureSettingsFields() {
+      const p = agentDraft.settings.provider;
+      if (apiKeyInput) agentDraft.keys[p] = apiKeyInput.value.trim();
+      if (setModelInput) agentDraft.settings.models[p] = setModelInput.value.trim();
+      if (setMaxSteps) agentDraft.settings.maxSteps = Number(setMaxSteps.value);
+      if (setTimeoutSec) agentDraft.settings.timeoutSec = Number(setTimeoutSec.value);
+      if (setMaxTokens) agentDraft.settings.maxTokens = Number(setMaxTokens.value);
+      if (setRememberKeys) agentDraft.settings.remember = Boolean(setRememberKeys.checked);
+    }
+
+    function updateActiveProviderLabel() {
+      const cfg = getAgentConfig();
+      const agentModeMiniTag = document.getElementById('agentModeMiniTag');
+      if (agentModeMiniTag) {
+        agentModeMiniTag.textContent = `${cfg.label} • ${cfg.model || 'select model'}`;
+      }
+    }
+
+    if (setProvider) {
+      setProvider.addEventListener('change', () => {
+        captureSettingsFields();
+        const newProvider = setProvider.value;
+        agentDraft.settings.provider = newProvider;
+        if (!agentDraft.settings.models[newProvider]) {
+          agentDraft.settings.models[newProvider] = newProvider === 'chrome' ? 'gemini-nano' : (newProvider === 'gemini' ? 'gemini-3.8-flash' : '');
+        }
+        refreshSettingsFields();
       });
     }
+
+    if (btnSaveKey) {
+      btnSaveKey.addEventListener('click', () => {
+        captureSettingsFields();
+        commitAgentSettings(agentDraft);
+        updateActiveProviderLabel();
+        syncDropdownModelSelect();
+        if (keyStatusMsg) {
+          keyStatusMsg.textContent = 'Settings and keys saved!';
+          setTimeout(() => { if (keyStatusMsg) keyStatusMsg.textContent = ''; }, 3000);
+        }
+      });
+    }
+
+    if (btnFetchModels) {
+      btnFetchModels.addEventListener('click', async () => {
+        const p = setProvider ? setProvider.value : agentDraft.settings.provider;
+        const apiKey = apiKeyInput ? apiKeyInput.value.trim() : agentDraft.keys[p];
+        if (!apiKey) {
+          if (fetchModelsMsg) fetchModelsMsg.textContent = 'Please enter an API key first.';
+          return;
+        }
+        fetchController?.abort();
+        fetchController = new AbortController();
+        btnFetchModels.disabled = true;
+        if (fetchModelsMsg) fetchModelsMsg.textContent = 'Querying available models...';
+        try {
+          const list = await listModels(p, { apiKey, signal: fetchController.signal });
+          if (modelList) {
+            modelList.replaceChildren(...list.map(val => Object.assign(document.createElement('option'), { value: val })));
+          }
+          if (fetchModelsMsg) fetchModelsMsg.textContent = `${list.length} models discovered — select one or type ID.`;
+        } catch (err) {
+          if (err.name !== 'AbortError' && fetchModelsMsg) {
+            fetchModelsMsg.textContent = `Fetch error: ${err.message}`;
+          }
+        } finally {
+          btnFetchModels.disabled = false;
+        }
+      });
+    }
+
+    if (btnClearSavedKeys) {
+      btnClearSavedKeys.addEventListener('click', () => {
+        clearAgentKeys();
+        agentDraft.keys = getAgentState().keys;
+        if (apiKeyInput) apiKeyInput.value = '';
+        if (fetchModelsMsg) fetchModelsMsg.textContent = 'Saved keys cleared.';
+        updateActiveProviderLabel();
+      });
+    }
+
+    if (btnExportSessionMd) {
+      btnExportSessionMd.addEventListener('click', () => {
+        const ok = exportAgentSession('md');
+        if (!ok) alert('No agent session items to export yet.');
+      });
+    }
+
+    if (btnExportSessionJson) {
+      btnExportSessionJson.addEventListener('click', () => {
+        const ok = exportAgentSession('json');
+        if (!ok) alert('No agent session items to export yet.');
+      });
+    }
+
+    refreshSettingsFields();
 
     // =========================================================================
     // 9. AUTOMATIC SSE AGENT STREAM & SLIDE APPROVALS
@@ -1964,10 +2382,22 @@
     const quickAllow = document.getElementById('quickAllowBtn');
     const quickDeny = document.getElementById('quickDenyBtn');
 
-    if (btnSlideAllow) btnSlideAllow.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'allow'));
-    if (btnSlideDeny) btnSlideDeny.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'deny'));
-    if (quickAllow) quickAllow.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'allow'));
-    if (quickDeny) quickDeny.addEventListener('click', () => currentPendingApproval && sendDecision(currentPendingApproval.id, 'deny'));
+    if (btnSlideAllow) btnSlideAllow.addEventListener('click', () => {
+      resolveCurrentPendingPermission('allow');
+      if (currentPendingApproval) sendDecision(currentPendingApproval.id, 'allow');
+    });
+    if (btnSlideDeny) btnSlideDeny.addEventListener('click', () => {
+      resolveCurrentPendingPermission('deny');
+      if (currentPendingApproval) sendDecision(currentPendingApproval.id, 'deny');
+    });
+    if (quickAllow) quickAllow.addEventListener('click', () => {
+      resolveCurrentPendingPermission('allow');
+      if (currentPendingApproval) sendDecision(currentPendingApproval.id, 'allow');
+    });
+    if (quickDeny) quickDeny.addEventListener('click', () => {
+      resolveCurrentPendingPermission('deny');
+      if (currentPendingApproval) sendDecision(currentPendingApproval.id, 'deny');
+    });
 
     // Hook simulator buttons
     const simBash = document.getElementById('simBashApproval');
@@ -2150,6 +2580,7 @@
     // =========================================================================
     let voiceWakeEnabled = localStorage.getItem('loly_voice_wake_enabled') !== 'false';
     const voiceWakeBtn = document.getElementById('voiceWakeBtn');
+    const dropdownVoiceToggle = document.getElementById('dropdownVoiceToggle');
     let speechRecognizer = null;
     let isSpeechListening = false;
     let isAwaitingVoiceCommand = false;
@@ -2158,6 +2589,7 @@
     let audioContext = null;
 
     function updateVoiceButtonState() {
+      if (dropdownVoiceToggle) dropdownVoiceToggle.checked = voiceWakeEnabled;
       if (!voiceWakeBtn) return;
       if (voiceWakeEnabled && isSpeechListening) {
         voiceWakeBtn.classList.add('listening');
@@ -2388,26 +2820,34 @@
       }
     }
 
+    function setVoiceWake(enabled) {
+      voiceWakeEnabled = Boolean(enabled);
+      localStorage.setItem('loly_voice_wake_enabled', String(voiceWakeEnabled));
+      updateVoiceButtonState();
+      if (voiceWakeEnabled) {
+        if (speechRecognizer && !isSpeechListening) {
+          try { speechRecognizer.start(); } catch (_) {}
+        }
+        showMascotSpeech('Voice wake enabled! Say "Hey Loly".', 3000);
+        playChimeSound(780, 0.15);
+      } else {
+        if (speechRecognizer && isSpeechListening) {
+          try { speechRecognizer.stop(); } catch (_) {}
+        }
+        showMascotSpeech('Voice wake muted.', 2500);
+      }
+    }
+
     if (voiceWakeBtn) {
       voiceWakeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        voiceWakeEnabled = !voiceWakeEnabled;
-        localStorage.setItem('loly_voice_wake_enabled', String(voiceWakeEnabled));
-        updateVoiceButtonState();
-        if (voiceWakeEnabled) {
-          if (speechRecognizer && !isSpeechListening) {
-            try { speechRecognizer.start(); } catch (_) {}
-          }
-          showMascotSpeech('Voice wake enabled! Say "Hey Loly".', 3000);
-          playChimeSound(780, 0.15);
-        } else {
-          if (speechRecognizer && isSpeechListening) {
-            try { speechRecognizer.stop(); } catch (_) {}
-          }
-          showMascotSpeech('Voice wake muted.', 2500);
-        }
+        setVoiceWake(!voiceWakeEnabled);
       });
     }
+    if (dropdownVoiceToggle) {
+      dropdownVoiceToggle.addEventListener('change', () => setVoiceWake(dropdownVoiceToggle.checked));
+    }
+    updateVoiceButtonState();
 
     initSpeechRecognition();
 
@@ -2435,8 +2875,15 @@
           }
         }
 
-        const text = target.getAttribute('data-tooltip');
+        let text = target.getAttribute('data-tooltip');
         if (!text) return;
+
+        // Custom music player status in tooltip
+        if (target.id === 'btnQuickMusicToggle' || target.closest('.music-dropdown-panel')) {
+          const trackName = musicPlayer ? musicPlayer.getCurrentTrackName() : 'Midnight Lo-Fi';
+          const isPlaying = musicPlayer ? musicPlayer.isPlaying : false;
+          text = isPlaying ? `Now Playing: ${trackName} • Controls: Play, Stop, Next` : `Music Player: ${trackName} • Click to open controls`;
+        }
 
         tooltipEl.textContent = text;
         tooltipEl.className = 'loly-custom-tooltip';

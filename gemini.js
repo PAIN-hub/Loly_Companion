@@ -1,10 +1,12 @@
 // Google Gemini API integration using native fetch
-export const GEMINI_DEFAULT_MODEL = 'gemini-2.5-flash';
+export const GEMINI_DEFAULT_MODEL = 'gemini-3.8-flash';
 
 export const SUPPORTED_GEMINI_MODELS = [
-  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (Fast, Recommended)' },
-  { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro (Deep Reasoning & Coding)' },
-  { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash' }
+  { id: 'gemini-3.8-flash', name: 'Gemini 3.8 Flash (Default)' },
+  { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash (Fast, Recommended)' },
+  { id: 'gemini-2.0-flash-lite', name: 'Gemini 2.0 Flash Lite (Ultra Fast)' },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash (Reliable General)' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro (Deep Reasoning & Coding)' }
 ];
 
 export async function listGeminiModels(apiKey) {
@@ -19,7 +21,7 @@ PERSONALITY GUIDELINES:
 - Act like an intelligent, lively companion who values the user's focus and screen real estate.`;
 
 export function resolveCloudModel(model) {
-  if (!model || model === 'chrome-builtin-auto' || model === 'chrome-builtin-only' || model.startsWith('chrome-')) {
+  if (!model || model === 'chrome-builtin-auto' || model === 'chrome-builtin-only' || model.startsWith('chrome-') || model === 'gemini-2.5-flash' || model === 'gemini-3.5-flash') {
     return GEMINI_DEFAULT_MODEL;
   }
   return model;
@@ -84,7 +86,7 @@ export async function chatWithGemini({
     try {
       const errJson = JSON.parse(errText);
       parsedErr = errJson.error?.message || errText;
-    } catch (_) {}
+    } catch (_) { }
     throw new Error(`Gemini API Error (${response.status}): ${parsedErr}`);
   }
 
@@ -151,7 +153,7 @@ export async function* chatStreamWithGemini({
     try {
       const errJson = JSON.parse(errText);
       parsedErr = errJson.error?.message || errText;
-    } catch (_) {}
+    } catch (_) { }
     throw new Error(`Gemini API Error (${response.status}): ${parsedErr}`);
   }
 
@@ -178,7 +180,7 @@ export async function* chatStreamWithGemini({
         if (text) {
           yield text;
         }
-      } catch (_) {}
+      } catch (_) { }
     }
   }
 }

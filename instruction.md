@@ -110,93 +110,58 @@ Download from [GitHub Releases](https://github.com/PAIN-hub/Loly_Companion/relea
 
 ---
 
-## 5. Autonomous Multi-File Coding Agent
+## 5. Autonomous Coding & Shell Execution Engine (Gen-v5 Merged)
 
-Loly includes an autonomous AI agent capable of multi-file modifications and shell command execution directly from the chat interface:
+Loly incorporates the complete **Nexus Shell Agent v5.0.0** execution engine while maintaining Loly's signature desktop dynamic island aesthetic:
 
-- **Target Workspace Pill**: Displays the currently active target directory (e.g. `Loly_Companion`). Clicking the pill lets you point Loly at any local project folder.
-- **Agent Mode Toggle**: Toggle between `Coding Agent` mode (which inspects, reads, and edits files across the directory tree) and conversational chat mode.
-- **Agent Tool Calling Engine**:
-  - `list_files`: Automatically traverses workspace folders up to 5 levels deep.
-  - `read_file`: Reads specific target files to analyze code context.
-  - `edit_file`: Performs surgical regex or string replacements across files.
-  - `write_file`: Generates new files within the project boundary.
-  - `run_command`: Executes build scripts, linters, and test commands.
-- **Interactive Diff Badges**: Each file modification step is rendered in the conversation stream with an expandable code diff view showing additions and deletions.
-
----
-
-## 6. Chrome Built-in AI (Prompt API) & Cloud Fallback
-
-Loly prioritizes Chrome's native, on-device AI inference via the **Prompt API / Gemini Nano** (`window.ai.languageModel`) for lightning-fast responses with zero latency and offline capability:
-
-- **Automatic Engine Detection**: When you select `⚡ Chrome Built-in AI (Prompt API + Cloud Fallback)` (the default), Loly tests on-device availability. If available, responses stream locally.
-- **Graceful Cloud Fallback**: If Chrome Built-in AI is not supported or not enabled in your current browser/runtime, Loly seamlessly and invisibly falls back to the Google Cloud Gemini API (`/api/gemini/chat-stream`).
-- **Live AI Engine Badge**: A badge next to the chat model selector displays whether you are running `⚡ Nano Local` or `☁️ Gemini Cloud`.
-- **How to Enable Chrome Nano**: In Chrome 128+, navigate to `chrome://flags/#prompt-api-for-gemini-nano` and set it to **Enabled**.
-
----
-
-## 7. Dynamic Notch Animations
-
-Loly features smooth, responsive micro-animations styled for an OLED `#000000` aesthetic:
-
-- **Appearance Spring Animation**: When the island first loads or reappears, it enters with a subtle spring bounce (`@keyframes islandEntrance`).
-- **Hover Lift & Rim Glow**: Hovering over the collapsed notch lifts the capsule slightly (`translateY(2px) scale(1.012)`) and enhances the white border glow.
-- **Chat Active Pulse**: While Loly is streaming an AI response, generating text, or running an autonomous coding task, the notch breathes with an animated pulsing ring and soundwave motion (`.notch-chat-active`).
+- **Multi-Provider AI Architecture**:
+  - **Google Gemini**: Uses Generative Language v1beta streaming (`gemini-2.5-flash`, `gemini-3.5-flash`, `gemini-3.8-flash`, etc.).
+  - **Anthropic Claude**: Direct browser streaming via Anthropic Messages API (`claude-3-7-sonnet-20250219`, `claude-3-5-sonnet-latest`) with `anthropic-dangerous-direct-browser-access`.
+  - **OpenAI / Codex**: Direct streaming via OpenAI Responses API (`gpt-4o`, `gpt-4.5-preview`, `o3-mini`).
+- **Autonomous Tool Calling Loop**:
+  - The agent emits `execute_shell_command` function calls to execute local build scripts, tests, and CLI tasks.
+  - Multi-turn execution loop continues autonomously up to the configured `maxSteps` (default: 6, max: 12).
+- **Interactive Permission Approvals**:
+  - Before any shell command is run, Loly generates an interactive **Permission Card** directly in the chat stream with command syntax highlighting.
+  - Quick action buttons on the notch island (`Allow` / `Deny`) also resolve pending permissions instantly.
+- **Process Group Isolation & Timeout Guards**:
+  - Each command runs within an isolated process group (`detached: true`) so children processes can be killed cleanly without orphan leaks.
+  - Configurable execution timeout (1 to 120 seconds, default: 10s).
+- **Persistent Shell State (`cd` tracking)**:
+  - Unix bash execution traps `EXIT` and reports the new working directory over file descriptor 3 (`trap 'pwd -P >&3' EXIT`).
+  - Windows PowerShell fallback tracks `$PWD` reliably.
+  - `cd` commands persist across turns in the session.
+- **ReDoS-Safe Secret Redaction**:
+  - Bounded regular expressions (`{0,40}`) sanitize API keys (`AIzaSy...`, `sk-ant-api...`, `sk-proj...`, bearer tokens, AWS credentials) before command output is streamed to the AI model or displayed on screen.
+- **Typewriter Rendering & History Navigation**:
+  - Markdown stream rendered safely via DOM construction with Lucide SVG copy buttons.
+  - Chat input supports `↑` and `↓` arrow keys to recall prior shell prompts.
+  - Stop button (`#btnStopAgent`) and `Escape` key immediately abort active multi-turn agent execution.
+- **Session Transcript Export**:
+  - Export full sessions to sanitized Markdown (`.md`) or structured JSON (`.json`) with one click from Settings.
 
 ---
 
-## 8. Inactivity Auto-Disappear Timer (30s Default)
+## 6. Configuring AI Engine Providers & Keys
 
-To keep your screen clean and distraction-free:
+In Loly's Settings drawer (click the **Gear icon** in the top right or open `http://127.0.0.1:4141/settings.html`):
 
-- **Default Behavior**: If no mouse, keyboard, or audio activity occurs for **30 seconds**, the notch island smoothly glides up into a sleek 4px glowing peek line at the top screen bezel.
-- **Instant Wake**: Moving your mouse to the top 16px of your monitor, hovering over the peek bar, clicking it, or pressing `Ctrl + Shift + L` instantly wakes Loly.
-- **Configurable Inactivity Duration**: Go to **Settings > Notch, Timer & Voice** to select:
-  - `10 Seconds (Quick Retract)`
-  - `30 Seconds (Default)`
-  - `1 Minute`
-  - `5 Minutes`
-  - `Never (Always Visible)`
-
----
-
-## 9. Voice Command & Wake Word Engine
-
-Wake up and control Loly completely hands-free using the native Web Speech API:
-
-- **Supported Wake Words**: Say `"Hey Loly"`, `"Loly"`, `"Coucou Loly"`, or `"Wake up Loly"`.
-- **Audio Feedback**: Upon detecting the wake word, Loly plays a dual-tone wake chime, bounces cheerfully, and shows `"I'm listening..."` in her speech bubble.
-- **Hands-Free Voice Actions**:
-  - `"Hey Loly, open settings"` — Launches the full Settings window.
-  - `"Hey Loly, play music"` / `"pause music"` — Controls audio tracks.
-  - `"Hey Loly, hide"` / `"sleep"` — Retracts the notch island immediately.
-  - `"Hey Loly, expand"` / `"open island"` — Expands the drawer.
-  - `"Hey Loly, agent mode"` — Toggles autonomous coding agent mode.
-  - `"Hey Loly, [any question or coding task]"` — Sends the prompt to Chrome Built-in AI / Gemini.
-- **Microphone Toggle**: Click the microphone icon in the notch pill anytime to mute or un-mute voice listening.
+1. **Select Provider**: Choose between **Google Gemini**, **Anthropic Claude**, or **OpenAI / Codex**.
+2. **API Key Input**:
+   - **Google Gemini**: Get key from [Google AI Studio](https://aistudio.google.com/app/apikey).
+   - **Anthropic Claude**: Get key from [Anthropic Console](https://console.anthropic.com/).
+   - **OpenAI**: Get key from [OpenAI Platform](https://platform.openai.com/api-keys).
+   - Keys are kept directly in the browser (`sessionStorage`, or `localStorage` if **Remember Keys on Device** is checked).
+3. **Model Selection & Discovery**:
+   - Click **Fetch Models** to query live available models directly from the provider API.
+   - Or type a custom model ID in the datalist input.
+4. **Agent Step & Timeout Preferences**:
+   - Set **Max Agent Steps** (1-12) and **Command Timeout** (1-120 seconds).
+   - Set **Max Output Tokens** (for Claude, up to 64,000 tokens).
 
 ---
 
-## 7. Configuring the Google Gemini API Key
-
-To enable real-time streaming chat, autonomous agent coding, and safety reviews:
-
-1. Obtain a **free API key** from [Google AI Studio](https://aistudio.google.com/app/apikey).
-2. In Loly:
-   - Click the **Gear icon** in the top right to open **Settings** (or open `http://127.0.0.1:4141/settings.html`).
-   - Paste your key in the **Gemini API Key** field.
-   - Click **Save Key**.
-3. Or set it in your environment:
-   ```bash
-   export GEMINI_API_KEY="AIzaSyYourKeyHere"
-   npm start
-   ```
-
----
-
-## 8. Testing Agent Integrations & Approvals
+## 7. Testing Agent Integrations & Approvals
 
 Loly includes a built-in agent simulation script to test events without running external agents:
 
@@ -211,12 +176,14 @@ curl -X POST http://127.0.0.1:4141/api/hook \
   -H "Content-Type: application/json" \
   -d '{
     "coucou_agent": "gemini-cli",
-    "event_type": "approval_request",
-    "title": "Bash Command Approval",
-    "target": "npm test --coverage",
-    "requires_approval": true
+    "event_type": "permission_request",
+    "title": "Bash Command Approval Required",
+    "target": "npm test -- --coverage",
+    "action_type": "bash_command"
   }'
 ```
+
+Watch Loly's island expand to display `[ Allow ]` and `[ Deny ]`, or ask Loly directly in the chat interface to test running a shell command!
 
 Watch Loly's island expand to display `[ Allow ]`, `[ Deny ]`, and `[ Ask Gemini Review ]`!
 
@@ -304,9 +271,12 @@ Once compiled in `dist/`, launch directly:
 
 ## 11. Audio Library & File Picker
 
-Loly includes an internal audio workstation and Lo-Fi player:
+Loly includes an internal audio workstation, Lo-Fi player, and real-time sound-reactive visualizer:
+- **Sound-Reactive Dynamic RGB Border**: Uses Web Audio API (`AudioContext` + `AnalyserNode`) to extract real-time bass, mid, and treble frequencies and drive a dynamic RGB border pulse and box-shadow glow on the player and Companion Island.
+- **Island Dropdown & Quick Music Widget**: Includes Prev, Play, Pause, Stop, and Forward (Next) controls with clean monochrome Lucide SVG icons.
+- **Custom Tooltip Integration (`lolyCustomTooltip`)**: Hovering over the music icon or player dynamically renders real-time playback status and track metadata in the custom floating indicator.
 - **Internal Storage & Native File Dialogs**: Clicking `Load Audio Files` invokes native OS file dialogs via Electron IPC (`desktopAPI.selectAudioFiles`, `desktopAPI.selectAudioFolder`) or the browser HTML5 file picker fallback.
-- **IndexedDB Audio Storage (`LolyAudioStorage`)**: Tracks are stored as offline binary blobs in IndexedDB, completely playable without a web server and persistent across reboots. Both the dynamic island player and the full settings window (`settings.html`) share and synchronize this audio storage library.
+- **IndexedDB Audio Storage (`LolyAudioStorage`)**: Tracks are stored as offline binary blobs in IndexedDB, completely playable without an external server and persistent across reboots. Both the dynamic island player and the full settings window (`settings.html`) share and synchronize this audio storage library.
 - **Ambient Focus Presets**: Includes procedural multi-oscillator chords for *Midnight Lo-Fi*, *Cyber Synthwave*, *Chill Coffee*, and *Rain Focus*.
 - **Microphone Permissions**: Electron default session automatically grants `media` access for hands-free voice wake words.
 

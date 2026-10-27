@@ -8,19 +8,20 @@ const distDir = path.join(__dirname, '..', 'dist');
 function fixAppImage() {
   if (!fs.existsSync(distDir)) return;
   const files = fs.readdirSync(distDir);
-  const appImageFile = files.find(f => f.endsWith('.AppImage') && !f.includes('-core'));
+  const appImageFiles = files.filter(f => f.endsWith('.AppImage') && !f.includes('-core') && f !== 'Loly.AppImage');
 
-  if (!appImageFile) {
+  if (!appImageFiles.length) {
     console.log('[fix-appimage] No raw .AppImage found to wrap.');
     return;
   }
 
-  const origPath = path.join(distDir, appImageFile);
-  const corePath = path.join(distDir, appImageFile.replace('.AppImage', '-core.AppImage'));
+  for (const appImageFile of appImageFiles) {
+    const origPath = path.join(distDir, appImageFile);
+    const corePath = path.join(distDir, appImageFile.replace('.AppImage', '-core.AppImage'));
 
-  if (!fs.existsSync(corePath)) {
-    fs.renameSync(origPath, corePath);
-  }
+    if (!fs.existsSync(corePath)) {
+      fs.renameSync(origPath, corePath);
+    }
 
   const launcherContent = `#!/usr/bin/env bash
 # Universal AppImage launcher for Loly (works on all Linux distros with or without libfuse2)
@@ -42,11 +43,24 @@ else
 fi
 `;
 
-  fs.writeFileSync(origPath, launcherContent, { mode: 0o755 });
-  const genericAppImage = path.join(distDir, 'Loly.AppImage');
-  fs.writeFileSync(genericAppImage, launcherContent, { mode: 0o755 });
+    fs.writeFileSync(origPath, launcherContent, { mode: 0o755 });
+    console.log(`[fix-appimage] Successfully created universal runner for ${appImageFile}`);
+  }
 
-  console.log(`[fix-appimage] Successfully created universal runner for ${appImageFile} and Loly.AppImage`);
+  const latest210 = path.join(distDir, 'Loly-2.1.0-core.AppImage');
+  if (fs.existsSync(latest210)) {
+    const genericContent = `#!/usr/bin/env bash
+set -e
+HERE="$(dirname "$(readlink -f "$0")")"
+CORE="$HERE/Loly-2.1.0-core.AppImage"
+if ldconfig -p 2>/dev/null | grep -q 'libfuse\\.so\\.2'; then
+  exec "$CORE" "$@"
+else
+  exec "$CORE" --appimage-extract-and-run "$@"
+fi
+`;
+    fs.writeFileSync(path.join(distDir, 'Loly.AppImage'), genericContent, { mode: 0o755 });
+  }
 }
 
 fixAppImage();

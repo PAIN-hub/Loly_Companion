@@ -10,10 +10,10 @@ An intelligent, non-intrusive desktop companion and floating notch interface des
 
 <br/>
 
-[![Release](https://img.shields.io/github/v/release/PAIN-hub/Loly_Companion?style=flat-square&color=111827)](https://github.com/PAIN-hub/Loly_Companion/releases)
+[![Release](https://img.shields.io/badge/Release-v2.1.0-111827?style=flat-square)](https://github.com/PAIN-hub/Loly_Companion/releases)
 [![Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-111827?style=flat-square&logo=github)](https://pain-hub.github.io/Loly_Companion/)
 [![Platform](https://img.shields.io/badge/Platform-Windows_|_Linux_|_macOS-111827?style=flat-square)](https://github.com/PAIN-hub/Loly_Companion/releases)
-[![AI Engine](https://img.shields.io/badge/AI-Google_Gemini_2.5_Flash-111827?style=flat-square&logo=google)](GEMINI_API_GUIDE.md)
+[![AI Engine](https://img.shields.io/badge/AI-Google_Gemini_3.5_Flash-111827?style=flat-square&logo=google)](GEMINI_API_GUIDE.md)
 [![License](https://img.shields.io/badge/License-MIT-111827?style=flat-square)](LICENSE)
 
 <br/>
@@ -48,10 +48,12 @@ When autonomous agentic systems (such as Gemini CLI, Claude Code, Antigravity, a
 
 **Loly Companion** establishes continuous real-time oversight via an unobtrusive screen island anchored to the top center of your display:
 
-- **Autonomous Multi-File Coding Agent**: Direct Loly to inspect, create, refactor, and execute terminal commands across local directories within verified security boundaries.
+- **Autonomous Multi-File Coding Agent (Gen-v5 Engine)**: Direct Loly to inspect, create, refactor, and execute terminal commands across local directories within verified security boundaries.
 - **In-Pill Permission Approvals**: Grant or deny terminal executions (`Allow`, `Deny`, `Always`) directly from the floating interface without switching application focus.
-- **Hybrid AI Architecture**: Seamlessly leverages on-device **Chrome Built-in AI** (Prompt API / Gemini Nano) with automatic cloud fallback to **Google Gemini 2.5 Flash** and **Gemini 2.5 Pro**.
-- **Offline Audio Storage**: Procedural ambient synthesizer and Lo-Fi workstation running locally via IndexedDB with full support for importing personal audio libraries.
+- **Multi-Provider AI Architecture**: Built-in default support for **Google Gemini 3.5 Flash** with seamless switching across **Anthropic Claude 3.7 Sonnet**, **OpenAI GPT-4o**, and on-device **Chrome Built-in AI** (Gemini Nano).
+- **Sound-Reactive RGB Lo-Fi Music Workstation**: Procedural ambient focus synthesizer and local audio library player powered by Web Audio API `AnalyserNode`, featuring real-time audio-frequency reactive dynamic RGB border pulses on the companion island and floating player.
+- **Zero-Delay Custom Tooltips (`lolyCustomTooltip`)**: Native OS tooltips replaced by a customized, interactive indicator providing live playback status and quick action hints.
+- **Interactive Folder Selector & Chat History**: One-click local directory switcher and persistent multi-turn chat sessions with instant rename and delete options.
 - **Complete Data Sovereignty**: All audit logs, file diffs, and chat sessions are stored locally in an isolated SQLite database (`~/.loly/loly.db`). Zero telemetry or external tracking.
 
 ---
@@ -64,21 +66,21 @@ Standalone compiled binaries are available for Windows, Linux, and macOS. Every 
 
 | Distribution | Asset | Architecture | Package Details |
 |---|---|---|---|
-| Portable Executable | [`Loly-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.exe) | `x86_64` | Standalone binary. Runs directly without installation. |
-| Setup Installer | [`Loly-Setup-2.0.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-Setup-2.0.0.exe) | `x86_64` | NSIS wizard with Start Menu and desktop shortcut creation. |
+| Portable Executable | [`Loly-2.1.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.1.0/Loly-2.1.0.exe) | `x86_64` | Standalone binary. Runs directly without installation. |
+| Setup Installer | [`Loly-Setup-2.1.0.exe`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.1.0/Loly-Setup-2.1.0.exe) | `x86_64` | NSIS wizard with Start Menu and desktop shortcut creation. |
 
 ### Linux (x64)
 
 | Distribution | Asset | Architecture | Package Details |
 |---|---|---|---|
-| Universal AppImage | [`Loly-2.0.0.AppImage`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0.AppImage) | `x86_64` | Compatible with Ubuntu, Debian, Arch, Fedora, and Kali Linux. |
-| Debian Package | [`loly_2.0.0_amd64.deb`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/loly_2.0.0_amd64.deb) | `amd64` | Native distribution package installer via `sudo dpkg -i`. |
+| Universal AppImage | [`Loly-2.1.0.AppImage`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.1.0/Loly-2.1.0.AppImage) | `x86_64` | Compatible with Ubuntu, Debian, Arch, Fedora, and Kali Linux. |
+| Debian Package | [`loly_2.1.0_amd64.deb`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.1.0/loly_2.1.0_amd64.deb) | `amd64` | Native distribution package installer via `sudo dpkg -i`. |
 
 ### macOS (Apple Silicon & Intel)
 
 | Distribution | Asset | Architecture | Package Details |
 |---|---|---|---|
-| Application Bundle | [`Loly-2.0.0-arm64-mac.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.0.0/Loly-2.0.0-arm64-mac.zip) | `arm64 / Universal` | Standalone `.app` archive. Unzip and drag to `/Applications`. |
+| Application Bundle | [`Loly-2.1.0-arm64-mac.zip`](https://github.com/PAIN-hub/Loly_Companion/releases/download/v2.1.0/Loly-2.1.0-arm64-mac.zip) | `arm64 / Universal` | Standalone `.app` archive. Unzip and drag to `/Applications`. |
 
 ---
 

@@ -2,7 +2,9 @@ import http from 'node:http';
 import net from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
+import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { db } from './db.js';
 import {
@@ -15,11 +17,103 @@ import {
   resolveCloudModel
 } from './gemini.js';
 import { runCodingAgent, getWorkspaceDir, setWorkspaceDir } from './agent.js';
+import { redactSecrets } from './public/tool.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = 4141;
 const HOST = '127.0.0.1';
 const SOCKET_PATH = process.platform === 'win32' ? '\\\\.\\pipe\\coucou' : '/tmp/coucou.sock';
+
+/* ---------- Gen-v5 Bridge Engine: Sessions & Stateful Runner ---------- */
+const DEFAULT_TIMEOUT_MS = 10_000;
+const MAX_TIMEOUT_MS = 120_000;
+const clampMs = (v) => (Number.isFinite(Number(v)) && v !== null && v !== '' ? Math.min(MAX_TIMEOUT_MS, Math.max(1000, Math.round(Number(v)))) : DEFAULT_TIMEOUT_MS);
+const MAX_OUTPUT = 1024 * 1024;
+const MAX_SESSIONS = 50;
+const SIGNALS = os.constants.signals;
+
+const isDir = async (p) => { try { return (await fs.promises.stat(p)).isDirectory(); } catch { return false; } };
+const sessions = new Map(); // token -> { cwd, busy }
+const TOKEN_RE = /^[a-f0-9]{64}$/;
+
+function createSession() {
+  if (sessions.size >= MAX_SESSIONS) sessions.delete(sessions.keys().next().value);
+  const token = crypto.randomBytes(32).toString('hex');
+  const startDir = getWorkspaceDir() || process.cwd();
+  const session = { cwd: startDir, busy: false };
+  sessions.set(token, session);
+  return { token, session };
+}
+const findSession = (token) => (typeof token === 'string' && TOKEN_RE.test(token) ? sessions.get(token) : undefined);
+
+// Own process group so Stop/timeout kills whole tree. fd 3 reports final $PWD so `cd` persists.
+const runCommand = ({ command, cwd, timeoutMs, signal }) => new Promise((resolve) => {
+  const isWin = process.platform === 'win32';
+  let child;
+
+  if (isWin) {
+    child = spawn('powershell.exe', ['-NoProfile', '-Command', `${command}; Write-Host '__LOLY_PWD__' (Get-Location).Path`], {
+      cwd,
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe']
+    });
+  } else {
+    const script = `trap 'printf %s "$PWD" >&3' EXIT\n${command}`;
+    child = spawn('/bin/bash', ['-c', script], {
+      cwd,
+      detached: true,
+      stdio: ['ignore', 'pipe', 'pipe', 'pipe'],
+      env: { ...process.env, CI: '1', TERM: 'dumb' }
+    });
+  }
+
+  let stdout = '';
+  let stderr = '';
+  let cwdOut = '';
+  let note = '';
+  let exitCode = 1;
+  let settled = false;
+
+  const killTree = () => {
+    try {
+      if (isWin) {
+        spawn('taskkill', ['/pid', String(child.pid), '/f', '/t']);
+      } else {
+        process.kill(-child.pid, 'SIGKILL');
+      }
+    } catch { /* already gone */ }
+  };
+
+  const timer = setTimeout(() => { note = `\n[timed out after ${timeoutMs / 1000}s]`; killTree(); }, timeoutMs);
+  const onAbort = () => { note = '\n[cancelled]'; killTree(); };
+  signal.addEventListener('abort', onAbort, { once: true });
+
+  const finish = () => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timer);
+    signal.removeEventListener('abort', onAbort);
+    for (const s of [child.stdout, child.stderr, child.stdio?.[3]]) s?.destroy?.();
+    resolve({ stdout: stdout.trim(), stderr: (stderr + note).trim(), exitCode, cwd: cwdOut || cwd });
+  };
+
+  child.stdout?.setEncoding('utf8').on('data', (d) => {
+    if (isWin && d.includes('__LOLY_PWD__')) {
+      const parts = d.split('__LOLY_PWD__');
+      stdout += parts[0];
+      cwdOut = parts[1]?.trim() || '';
+    } else {
+      if (stdout.length < MAX_OUTPUT) stdout += d;
+    }
+  });
+  child.stderr?.setEncoding('utf8').on('data', (d) => { if (stderr.length < MAX_OUTPUT) stderr += d; });
+  if (!isWin && child.stdio[3]) {
+    child.stdio[3].setEncoding('utf8').on('data', (d) => { if (cwdOut.length < 4096) cwdOut += d; });
+  }
+  child.on('error', (err) => { stderr += err.message; finish(); });
+  child.on('exit', (code, sig) => { exitCode = code ?? 128 + (SIGNALS[sig] ?? 0); setTimeout(finish, 100); });
+  child.on('close', finish);
+});
 
 function getPublicDir() {
   const localPublic = path.join(__dirname, 'public');
@@ -225,6 +319,94 @@ const server = http.createServer(async (req, res) => {
 
   // REST API Routes
   try {
+    // 0a. Shell Bridge Session Creation
+    if (url.pathname === '/api/session' && (req.method === 'GET' || req.method === 'POST')) {
+      const { token, session } = createSession();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ token, sessionId: token, cwd: session.cwd, timeoutMs: DEFAULT_TIMEOUT_MS, maxTimeoutMs: MAX_TIMEOUT_MS }));
+      return;
+    }
+
+    // 0b. Shell Bridge Command Execution with fd 3 persistent PWD & Secret Redaction
+    if (url.pathname === '/api/exec' && req.method === 'POST') {
+      const reqToken = req.headers['x-nexus-token'] || req.headers['x-loly-token'];
+      const session = findSession(reqToken);
+      if (!session) {
+        res.writeHead(401, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Bad or expired session token' }));
+        return;
+      }
+      if (!String(req.headers['content-type'] ?? '').startsWith('application/json')) {
+        res.writeHead(415, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'JSON payload required' }));
+        return;
+      }
+      if (session.busy) {
+        res.writeHead(409, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'A command is already executing in this session.' }));
+        return;
+      }
+
+      session.busy = true;
+      try {
+        const { command, timeoutMs } = await parseJsonBody();
+        if (typeof command !== 'string' || !command.trim() || command.length > 3000) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Invalid command payload' }));
+          return;
+        }
+
+        const currentStart = getWorkspaceDir() || process.cwd();
+        if (!(await isDir(session.cwd))) session.cwd = currentStart;
+
+        const ac = new AbortController();
+        res.on('close', () => { if (!res.writableEnded) ac.abort(); });
+        const effectiveMs = clampMs(timeoutMs);
+
+        currentAgent.name = 'Loly-Agent';
+        currentAgent.status = 'working';
+        currentAgent.tickerText = `Running: ${command.slice(0, 40)}...`;
+        broadcast('agent_status', currentAgent);
+        broadcast('agent_activity', { agentName: 'Loly-Agent', title: 'Running command', details: command });
+
+        const out = await runCommand({ command, cwd: session.cwd, timeoutMs: effectiveMs, signal: ac.signal });
+
+        if (out.cwd && path.isAbsolute(out.cwd) && (await isDir(out.cwd))) {
+          session.cwd = out.cwd;
+          setWorkspaceDir(out.cwd);
+        }
+
+        const so = redactSecrets(out.stdout);
+        const se = redactSecrets(out.stderr);
+        const redactions = so.count + se.count;
+
+        // Log execution to Loly SQLite database
+        db.logEvent('session-active', 'Loly-Agent', 'command_run', command.slice(0, 50), JSON.stringify({ exitCode: out.exitCode, cwd: session.cwd }));
+
+        currentAgent.status = out.exitCode === 0 ? 'idle' : 'error';
+        currentAgent.tickerText = out.exitCode === 0 ? `Completed: exit 0 in ${path.basename(session.cwd)}` : `Fault: exit ${out.exitCode}`;
+        broadcast('agent_status', currentAgent);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          stdout: so.text,
+          stderr: se.text,
+          exitCode: out.exitCode,
+          cwd: session.cwd,
+          timeoutMs: effectiveMs,
+          redactions
+        }));
+        return;
+      } catch (execErr) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: execErr.message || 'Execution error' }));
+        return;
+      } finally {
+        session.busy = false;
+      }
+      return;
+    }
+
     // 1. Asynchronous Agent Hook POST
     if (url.pathname === '/api/hook' && req.method === 'POST') {
       const payload = await parseJsonBody();
@@ -409,25 +591,85 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    // 4d-0. Folder browser for the workspace picker (directories only)
+    if (url.pathname === '/api/fs/list' && req.method === 'GET') {
+      const rawPath = (url.searchParams.get('path') || '').trim();
+      const showHidden = url.searchParams.get('hidden') === '1';
+      let target = rawPath || getWorkspaceDir() || os.homedir();
+      if (target === '~' || target.startsWith('~/')) {
+        target = path.join(os.homedir(), target.slice(1));
+      }
+      target = path.resolve(target);
+      try {
+        if (!fs.statSync(target).isDirectory()) target = path.dirname(target);
+        const dirents = fs.readdirSync(target, { withFileTypes: true });
+        const MAX_ENTRIES = 1000;
+        const entries = [];
+        for (const d of dirents) {
+          if (!showHidden && d.name.startsWith('.')) continue;
+          let isDir = d.isDirectory();
+          if (!isDir && d.isSymbolicLink()) {
+            try { isDir = fs.statSync(path.join(target, d.name)).isDirectory(); } catch { isDir = false; }
+          }
+          if (isDir) entries.push({ name: d.name, path: path.join(target, d.name) });
+        }
+        entries.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+        const parent = path.dirname(target);
+        const markers = ['.git', 'package.json', 'pyproject.toml', 'Cargo.toml', 'go.mod', 'manage.py']
+          .filter((m) => fs.existsSync(path.join(target, m)));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          path: target,
+          parent: parent === target ? null : parent,
+          home: os.homedir(),
+          sep: path.sep,
+          markers,
+          truncated: entries.length > MAX_ENTRIES,
+          entries: entries.slice(0, MAX_ENTRIES)
+        }));
+      } catch (err) {
+        res.writeHead(err.code === 'ENOENT' ? 404 : 403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.code === 'ENOENT' ? 'Folder does not exist' : 'Cannot open this folder (permission denied)' }));
+      }
+      return;
+    }
+
     // 4d. Workspace Directory Information & Management
     if (url.pathname === '/api/agent/workspace' && req.method === 'GET') {
+      const active = getWorkspaceDir() || process.cwd();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
-        workspace: getWorkspaceDir(),
+        workspace: active,
+        workspaceDir: active,
         cwd: process.cwd()
       }));
       return;
     }
 
     if (url.pathname === '/api/agent/workspace' && req.method === 'POST') {
-      const { workspaceDir } = await parseJsonBody();
-      const updated = setWorkspaceDir(workspaceDir);
+      const body = await parseJsonBody();
+      const workspaceDir = body.workspaceDir || body.path || body.dir;
+      if (!workspaceDir || typeof workspaceDir !== 'string') {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'Workspace path must be a non-empty string' }));
+        return;
+      }
+      let target = workspaceDir.trim();
+      if (target.startsWith('~')) {
+        target = path.join(os.homedir(), target.slice(1));
+      } else if (!path.isAbsolute(target)) {
+        target = path.resolve(getWorkspaceDir() || process.cwd(), target);
+      }
+      const updated = setWorkspaceDir(target);
       if (updated) {
+        for (const s of sessions.values()) {
+          s.cwd = updated;
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, workspace: updated }));
+        res.end(JSON.stringify({ success: true, workspace: updated, workspaceDir: updated }));
       } else {
         res.writeHead(400, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'Directory does not exist or invalid' }));
+        res.end(JSON.stringify({ error: `Directory "${workspaceDir}" does not exist or is not accessible` }));
       }
       return;
     }
