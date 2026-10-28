@@ -6,7 +6,7 @@
 
 ### Autonomous AI Coding Agent Companion & Desktop Screen Island
 
-An intelligent, non-intrusive desktop companion and floating notch interface designed for developers orchestrating autonomous AI coding agents. Engineered with Google Gemini, on-device Chrome Built-in AI, real-time terminal approval gates, and multi-file code editing capabilities.
+An intelligent, non-intrusive desktop companion and floating notch interface designed for developers orchestrating autonomous AI coding agents. Engineered with Google Gemini, on-device Chrome Built-in AI, Anthropic Claude, Openai, real-time terminal approval gates, and multi-file code editing capabilities.
 
 <br/>
 
