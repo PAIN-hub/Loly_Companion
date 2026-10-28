@@ -13,7 +13,6 @@ An intelligent, non-intrusive desktop companion and floating notch interface des
 [![Release](https://img.shields.io/badge/Release-v2.1.0-111827?style=flat-square)](https://github.com/PAIN-hub/Loly_Companion/releases)
 [![Demo](https://img.shields.io/badge/Live_Demo-GitHub_Pages-111827?style=flat-square&logo=github)](https://pain-hub.github.io/Loly_Companion/)
 [![Platform](https://img.shields.io/badge/Platform-Windows_|_Linux_|_macOS-111827?style=flat-square)](https://github.com/PAIN-hub/Loly_Companion/releases)
-[![AI Engine](https://img.shields.io/badge/AI-Google_Gemini_3.5_Flash-111827?style=flat-square&logo=google)](GEMINI_API_GUIDE.md)
 [![License](https://img.shields.io/badge/License-MIT-111827?style=flat-square)](LICENSE)
 
 <br/>
